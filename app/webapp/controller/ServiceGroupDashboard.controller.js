@@ -407,7 +407,7 @@ sap.ui.define([
     },
 
     onChangeRequestsTilePress: function () {
-      this._goToFilteredTickets({ ticketType: "CHANGE", excludeClosed: true, label: "Change Requests" });
+      this._goToFilteredTickets({ ticketType: CHANGE_TICKET_TYPE, excludeClosed: true, label: "Change Requests" });
     }
   });
 });
