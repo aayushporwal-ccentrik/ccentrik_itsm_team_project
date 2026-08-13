@@ -21,6 +21,11 @@
         <Title text="Service Group Dashboard" class="appHeaderTitle"/>
       </contentMiddle>
       <contentRight>
+        <Label text="Client" class="sapUiTinyMarginEnd" />
+        <Select id="clientFilter" width="10rem" class="sapUiSmallMarginEnd"
+                selectedKey="{ops>/selectedClient}" items="{ops>/clients}" change=".onClientChange">
+          <core:Item key="{ops>code}" text="{ops>name}"/>
+        </Select>
         <Button text="View Tickets" icon="sap-icon://menu2" class="submitBtn" press=".onGoTickets"/>
       </contentRight>
     </Bar>

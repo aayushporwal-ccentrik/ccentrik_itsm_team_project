@@ -87,3 +87,7 @@ dd38aff0-5595-4ad0-9963-fc421b8ababd,MPT_STATUS,BREACHED,Breached,,40,false,true
 b63567af-0b19-4b01-b08c-568c04507f4c,WORKING_AREA,TECHNICAL,Technical,,20,false,true
 58edbced-1ef9-4e79-8997-e1085c4ceaab,WORKING_AREA,BASIS,Basis,,30,false,true
 0583087a-080a-4ab9-87da-d4b1f131bf95,WORKING_AREA,SECURITY,Security,,40,false,true
+c1a00001-0000-4000-8000-000000000001,CLIENT,MERIDIAN,Meridian Retail Group,SAP services client,10,false,true
+c1a00001-0000-4000-8000-000000000002,CLIENT,SOLSTICE,Solstice Manufacturing,SAP services client,20,false,true
+c1a00001-0000-4000-8000-000000000003,CLIENT,HARBORPT,Harbor Point Logistics,SAP services client,30,false,true
+c1a00001-0000-4000-8000-000000000004,CLIENT,Hero Moto Corp,Hero Moto Corp,SAP services client,40,false,true

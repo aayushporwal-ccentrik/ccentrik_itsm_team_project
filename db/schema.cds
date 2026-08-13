@@ -19,6 +19,12 @@ context transaction {
         reportedBy       : String;
         messageProcessor : String;
         supportTeam      : String;
+
+        // Read-only link to the reporting user, purely so the client's
+        // company can be shown/filtered on — reportedBy itself stays the
+        // plain username it always was.
+        reportedByUser : Association to master.User
+            on reportedByUser.userId = reportedBy;
  
         firstResponseAt  : Timestamp;
         dueAt            : Timestamp;
@@ -103,5 +109,6 @@ context master {
         email    : String;
         isActive : Boolean;
         role     : String;
+        client   : String;
     }
 }
