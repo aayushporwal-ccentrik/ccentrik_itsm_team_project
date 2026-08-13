@@ -12,11 +12,15 @@ context transaction {
         ticketType       : String;
  
         shortDescription : String;
+        description      : String;
         status           : String;
         subStatus        : String;
         priority         : String;
- 
+
         reportedBy       : String;
+        createdByName     : String;
+        createdByLocation : String;
+        orgName           : String;
         messageProcessor : String;
         supportTeam      : String;
 
@@ -83,6 +87,13 @@ context transaction {
         fileSize    : Integer;
         storagePath : String;
     }
+
+    entity TicketLog : cuid, managed {
+        receivdDt   : Timestamp;
+        completedDt : Timestamp;
+        ticketID    : String;
+        status      : String;
+    }
 }
  
 context master {
@@ -110,5 +121,21 @@ context master {
         isActive : Boolean;
         role     : String;
         client   : String;
+    }
+
+    entity OrganizationSLA : cuid, managed {
+
+        organizationId   : String;
+        organizationName : String;
+
+        impact           : String;
+        urgency          : String;
+        impactedUserFrom : Integer;
+        impactedUserTo   : Integer;
+        priority         : String;
+        firstResponseMinutes : Integer;
+        resolutionMinutes    : Integer;
+
+        isActive : Boolean;
     }
 }

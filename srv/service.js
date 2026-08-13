@@ -17,6 +17,7 @@ module.exports = cds.service.impl(function () {
   "use strict";
 
   this.on("currentUser", onCurrentUser);
+  this.on("getCurrUser", onGetCurrUser);
   this.before("CREATE", "Tickets", onBeforeCreateTicket);
   this.before("UPDATE", "Tickets", onBeforeUpdateTicket);
 });
@@ -29,6 +30,11 @@ async function onCurrentUser(req) {
   else if (req.user.is("ServiceGroup")) { sPersona = "SERVICE_GROUP"; }
 
   return { persona: sPersona, userName: req.user.id };
+}
+
+// Manager-requested: plain username, no persona wrapper.
+async function onGetCurrUser(req) {
+  return req.user.id;
 }
 
 // Assigns a ticket its key (ticketID) and its human-readable number
