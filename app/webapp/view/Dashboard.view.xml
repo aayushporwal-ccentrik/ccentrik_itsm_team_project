@@ -1,0 +1,203 @@
+<mvc:View
+  controllerName="itsm.ui.controller.Dashboard"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:viz="sap.viz.ui5.controls"
+  xmlns:vizData="sap.viz.ui5.data"
+  xmlns:vizFeed="sap.viz.ui5.controls.common.feeds"
+  displayBlock="true">
+
+  <Page id="dashPage" showHeader="false" backgroundDesign="Transparent" class="appBg densePage">
+
+    <!-- ===== styled app header: logo (left) · title (center) · tile picker (right) ===== -->
+    <Bar class="appHeader">
+      <contentLeft>
+        <Image src="images/ccentrik.png" height="30px" densityAware="false" class="appLogo" press=".onGoDashboard"/>
+      </contentLeft>
+      <contentMiddle>
+        <Title text="Service Desk Dashboard" class="appHeaderTitle"/>
+      </contentMiddle>
+      <contentRight>
+        <Button icon="sap-icon://action-settings" tooltip="Choose which 6 KPI tiles to show" type="Transparent"
+                class="headerActionBtn" press=".onManageTiles"/>
+      </contentRight>
+    </Bar>
+
+    <!-- ===== KPI tile picker: pick exactly 6 tiles out of the full pool. ===== -->
+    <Dialog id="tilePickerDialog" title="Choose 6 KPI Tiles" contentWidth="24rem">
+      <Text text="{= ${tp>/selectedCount} + ' of ' + ${tp>/tileCount} + ' selected'}" class="sapUiSmallMargin"/>
+      <List id="tilePickerList" mode="MultiSelect" items="{tp>/allTiles}" selectionChange=".onTilePickerSelectionChange">
+        <StandardListItem title="{tp>label}" selected="{tp>selected}"/>
+      </List>
+      <beginButton>
+        <Button text="Save" type="Emphasized" enabled="{tp>/canSave}" press=".onSaveTileSelection"/>
+      </beginButton>
+      <endButton>
+        <Button text="Cancel" press=".onCancelTileSelection"/>
+      </endButton>
+    </Dialog>
+
+    <!-- ===== KPI tiles: exactly 6 of the pool, chosen via the picker above.
+         Accent (accN) and selection (kpiSel) classes are applied in the
+         controller, not bound here — binding "class" straight onto
+         GenericTile doesn't reliably resolve in this control. ===== -->
+    <HBox id="tileRow" class="tileRow" width="100%" items="{dash>/tiles}">
+      <VBox class="kpiTileWrap">
+        <layoutData>
+          <FlexItemData growFactor="1" baseSize="0"/>
+        </layoutData>
+        <GenericTile
+          header="{dash>label}"
+          frameType="OneByHalf"
+          width="100%"
+          state="Loaded"
+          press=".onTilePress"
+          class="kpiTile">
+          <TileContent>
+            <NumericContent value="{dash>count}" valueColor="{dash>color}" icon="{dash>icon}" withMargin="false"/>
+          </TileContent>
+        </GenericTile>
+        <Text text="{dash>trendLabel}" class="trendBadge"/>
+      </VBox>
+    </HBox>
+
+    <!-- ===== ticket table ===== -->
+    <HBox class="splitRow" width="100%" alignItems="Stretch">
+      <VBox class="tablePane">
+        <Table
+          id="dashTable"
+          inset="false"
+          growing="true"
+          growingThreshold="50"
+          sticky="ColumnHeaders,HeaderToolbar"
+          items="{
+            path: '/Tickets',
+            parameters: {
+              $expand: 'incidentForm($select=category1)',
+              $orderby: 'createdAt desc'
+            }
+          }"
+          noDataText="No tickets for this selection.">
+
+          <headerToolbar>
+            <OverflowToolbar style="Clear">
+              <Title text="{dash>/tableTitle}" level="H5"/>
+              <ToolbarSpacer/>
+              <Select id="categoryFilter" width="9rem" items="{filters>/categories}" change=".onFilterChange">
+                <core:Item key="{filters>code}" text="{filters>name}"/>
+              </Select>
+              <Select id="priorityFilter" width="9rem" items="{filters>/priorities}" change=".onFilterChange">
+                <core:Item key="{filters>code}" text="{filters>name}"/>
+              </Select>
+              <Select id="assigneeFilter" width="9rem" items="{filters>/assignees}" change=".onFilterChange">
+                <core:Item key="{filters>code}" text="{filters>name}"/>
+              </Select>
+              <SearchField width="16rem" placeholder="Search # or description" search=".onSearch" liveChange=".onSearch"/>
+              <Button text="Reset" icon="sap-icon://clear-filter" press=".onResetFilters"/>
+              <Button id="tableExpandBtn" icon="sap-icon://full-screen" tooltip="Expand table" type="Transparent"
+                      press=".onToggleTableExpand" class="tableExpandBtn"/>
+              <Button text="New Ticket" icon="sap-icon://add" class="submitBtn" press=".onCreateTicket"
+                      visible="{= ${role>/persona} === 'END_USER' }"/>
+            </OverflowToolbar>
+          </headerToolbar>
+
+          <columns>
+            <Column width="7rem"><Text text="Incident #"/></Column>
+            <Column width="16rem"><Text text="Short Description"/></Column>
+            <Column width="8rem"><Text text="Status"/></Column>
+            <Column width="8rem"><Text text="Priority"/></Column>
+            <Column width="8rem"><Text text="SLA"/></Column>
+            <Column width="8rem"><Text text="Category"/></Column>
+            <Column width="9rem"><Text text="Assigned To"/></Column>
+            <Column width="9rem"><Text text="Created On"/></Column>
+          </columns>
+
+          <items>
+            <ColumnListItem type="Navigation" press=".onTicketPress">
+              <cells>
+                <ObjectIdentifier title="{ticketNumber}"/>
+                <Text text="{shortDescription}"/>
+                <ObjectStatus text="{path: 'status', formatter: '.formatStatusName'}"/>
+                <ObjectStatus text="{path: 'priority', formatter: '.formatPriorityName'}" state="{path: 'priority', formatter: '.formatPriorityState'}"/>
+                <ObjectStatus
+                  text="{parts: ['dueAt', 'completedAt'], formatter: '.formatSlaText'}"
+                  state="{parts: ['dueAt', 'completedAt'], formatter: '.formatSlaState'}"/>
+                <Text text="{path: 'incidentForm/category1', formatter: '.formatCategoryName'}"/>
+                <Text text="{messageProcessor}"/>
+                <Text text="{path: 'createdAt', formatter: '.formatDateTime'}"/>
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </VBox>
+
+      <!-- CATEGORY-WISE BREAKDOWN: donut + color key + ranked list with
+           open/closed split, same as the original design. -->
+      <VBox id="chartPane" class="chartPane">
+        <HBox justifyContent="SpaceBetween" alignItems="Center" width="100%" class="chartHeadRow">
+          <Text text="CATEGORY-WISE BREAKDOWN" class="sectionPill"/>
+          <HBox alignItems="Center" class="chartHeadActions">
+            <Button icon="sap-icon://line-chart" type="Transparent"
+                    tooltip="Open Service Group analytics" press=".onGoAnalytics" class="analyticsBtn"
+                    visible="{= ${role>/persona} === 'SERVICE_GROUP' }"/>
+          </HBox>
+        </HBox>
+        <VBox class="chartBody">
+          <HBox class="chartRow" alignItems="Center" width="100%">
+            <viz:VizFrame
+              id="categoryChart"
+              vizType="donut"
+              width="170px"
+              height="220px"
+              uiConfig="{applicationSet:'fiori'}">
+              <viz:dataset>
+                <vizData:FlattenedDataset data="{dash>/categoryData}">
+                  <vizData:dimensions>
+                    <vizData:DimensionDefinition name="Category" value="{dash>name}"/>
+                  </vizData:dimensions>
+                  <vizData:measures>
+                    <vizData:MeasureDefinition name="Tickets" value="{dash>count}"/>
+                  </vizData:measures>
+                </vizData:FlattenedDataset>
+              </viz:dataset>
+              <viz:feeds>
+                <vizFeed:FeedItem uid="size" type="Measure" values="Tickets"/>
+                <vizFeed:FeedItem uid="color" type="Dimension" values="Category"/>
+              </viz:feeds>
+            </viz:VizFrame>
+
+            <VBox id="chartKeyBox" class="chartKey" items="{dash>/categoryData}">
+              <HBox class="keyRow" alignItems="Center">
+                <VBox class="keyDot"/>
+                <Text text="{dash>name}" class="keyLabel"/>
+              </HBox>
+            </VBox>
+          </HBox>
+
+          <List id="categoryList" items="{dash>/categoryData}" class="sapUiTinyMarginTop catList" noDataText="No category data yet.">
+            <CustomListItem>
+              <VBox class="catRow">
+                <HBox justifyContent="SpaceBetween">
+                  <Text text="{dash>name}" class="catName"/>
+                  <Text text="{dash>count}" class="catCount"/>
+                </HBox>
+                <HBox class="catBar2">
+                  <VBox class="catBar2Open" width="{= ${dash>openPercent} + '%'}"/>
+                  <VBox class="catBar2Closed" width="{= ${dash>closedPercent} + '%'}"/>
+                </HBox>
+                <HBox class="catSplitRow" alignItems="Center">
+                  <VBox class="catSplitDot catSplitDotOpen"/>
+                  <Text text="{= 'Open ' + ${dash>openCount}}" class="catSplitLabel"/>
+                  <VBox class="catSplitDot catSplitDotClosed"/>
+                  <Text text="{= 'Closed ' + ${dash>closedCount}}" class="catSplitLabel"/>
+                </HBox>
+              </VBox>
+            </CustomListItem>
+          </List>
+        </VBox>
+      </VBox>
+    </HBox>
+
+  </Page>
+</mvc:View>

@@ -1,0 +1,30 @@
+Starting CAP Project Generator...
+Using @sap/cds-dk [9.9.1] from /extbin/globals/bun/global/install/node_modules/@sap/cds-dk
+Using @sap/generator-cap-project [2.0.6] from [/extbin/globals/bun/global/install/node_modules/@sap/generator-cap-project]
+Using root path [/home/user/projects]
+
+Creating project with mta, nodejs, postgres, xsuaa
+
+Adding facet: nodejs
+Adding facet: mta
+Adding facet: xsuaa
+Adding facet: postgres
+
+Successfully initialized CAP project
+Continue with: code ITSM 
+
+
+Installing dependencies...
+
+added 272 packages, and audited 273 packages in 4s
+
+40 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+Finished installing dependencies
+
+Done setting up project ITSM
+Project is ready to use
+

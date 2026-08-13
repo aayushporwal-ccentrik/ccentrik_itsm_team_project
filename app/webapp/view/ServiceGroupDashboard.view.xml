@@ -1,0 +1,267 @@
+<mvc:View
+  controllerName="itsm.ui.controller.ServiceGroupDashboard"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:viz="sap.viz.ui5.controls"
+  xmlns:vizData="sap.viz.ui5.data"
+  xmlns:vizFeed="sap.viz.ui5.controls.common.feeds"
+  displayBlock="true">
+
+  <Page id="sgDashboardPage" showHeader="false" backgroundDesign="Transparent" class="appBg densePage sgDash">
+
+    <!-- ===== app header: logo · title · View Tickets ===== -->
+    <Bar class="appHeader">
+      <contentLeft>
+        <!-- This is the Service Group landing page, so no Back button —
+             there's nowhere behind it. -->
+        <Image src="images/ccentrik.png" height="30px" densityAware="false" class="appLogo" press=".onGoDashboard"/>
+      </contentLeft>
+      <contentMiddle>
+        <Title text="Service Group Dashboard" class="appHeaderTitle"/>
+      </contentMiddle>
+      <contentRight>
+        <Button text="View Tickets" icon="sap-icon://menu2" class="submitBtn" press=".onGoTickets"/>
+      </contentRight>
+    </Bar>
+
+    <!-- ===================== KPI ROW ===================== -->
+    <HBox class="tileRow sapUiTinyMarginTop" width="100%" wrap="Wrap">
+      <VBox class="kpiTileWrap"><layoutData><FlexItemData growFactor="1" baseSize="10rem"/></layoutData>
+        <GenericTile header="Total Active Tickets" frameType="OneByHalf" width="100%" state="Loaded" class="kpiTile acc1" press=".onTotalActiveTilePress">
+          <TileContent><NumericContent value="{ops>/kpi/totalActive}" valueColor="Neutral" icon="sap-icon://sales-order" withMargin="false"/></TileContent>
+        </GenericTile>
+      </VBox>
+      <VBox class="kpiTileWrap"><layoutData><FlexItemData growFactor="1" baseSize="10rem"/></layoutData>
+        <GenericTile header="Unassigned Tickets" frameType="OneByHalf" width="100%" state="Loaded" class="kpiTile acc3" press=".onUnassignedTilePress">
+          <TileContent><NumericContent value="{ops>/kpi/unassigned}" valueColor="Critical" icon="sap-icon://person-placeholder" withMargin="false"/></TileContent>
+        </GenericTile>
+      </VBox>
+      <VBox class="kpiTileWrap"><layoutData><FlexItemData growFactor="1" baseSize="10rem"/></layoutData>
+        <GenericTile header="SLA Breached" frameType="OneByHalf" width="100%" state="Loaded" class="kpiTile acc4" press=".onSlaBreachedTilePress">
+          <TileContent><NumericContent value="{ops>/kpi/breached}" valueColor="Error" icon="sap-icon://message-error" withMargin="false"/></TileContent>
+        </GenericTile>
+      </VBox>
+      <VBox class="kpiTileWrap"><layoutData><FlexItemData growFactor="1" baseSize="10rem"/></layoutData>
+        <GenericTile header="SLA Due in Next 2 Hours" frameType="OneByHalf" width="100%" state="Loaded" class="kpiTile acc3" press=".onSlaDueSoonTilePress">
+          <TileContent><NumericContent value="{ops>/kpi/dueSoon}" valueColor="Critical" icon="sap-icon://alert" withMargin="false"/></TileContent>
+        </GenericTile>
+      </VBox>
+      <VBox class="kpiTileWrap"><layoutData><FlexItemData growFactor="1" baseSize="10rem"/></layoutData>
+        <GenericTile header="High / Critical Priority" frameType="OneByHalf" width="100%" state="Loaded" class="kpiTile acc4" press=".onHighCriticalTilePress">
+          <TileContent><NumericContent value="{ops>/kpi/highCritical}" valueColor="Error" icon="sap-icon://flag" withMargin="false"/></TileContent>
+        </GenericTile>
+      </VBox>
+      <VBox class="kpiTileWrap"><layoutData><FlexItemData growFactor="1" baseSize="10rem"/></layoutData>
+        <GenericTile header="Open Change Requests" frameType="OneByHalf" width="100%" state="Loaded" class="kpiTile acc2" press=".onChangeRequestsTilePress">
+          <TileContent><NumericContent value="{ops>/kpi/changeRequests}" valueColor="Neutral" icon="sap-icon://request" withMargin="false"/></TileContent>
+        </GenericTile>
+      </VBox>
+      <VBox class="kpiTileWrap"><layoutData><FlexItemData growFactor="1" baseSize="10rem"/></layoutData>
+        <GenericTile header="Avg Resolution Time (hrs)" frameType="OneByHalf" width="100%" state="Loaded" class="kpiTile acc1">
+          <TileContent><NumericContent value="{ops>/kpi/avgResolutionHours}" valueColor="Neutral" icon="sap-icon://lab" withMargin="false"/></TileContent>
+        </GenericTile>
+      </VBox>
+      <VBox class="kpiTileWrap"><layoutData><FlexItemData growFactor="1" baseSize="10rem"/></layoutData>
+        <GenericTile header="First Response Logged %" frameType="OneByHalf" width="100%" state="Loaded" class="kpiTile acc6">
+          <TileContent><NumericContent value="{ops>/kpi/firstResponsePercent}" scale="%" valueColor="Good" icon="sap-icon://sys-enter-2" withMargin="false"/></TileContent>
+        </GenericTile>
+      </VBox>
+    </HBox>
+
+    <!-- ===================== ROW 1: WORK QUEUE | ENGINEER OVERLOAD | SLA MONITOR ===================== -->
+    <HBox class="analyticsRow sapUiTinyMarginTop" wrap="Wrap" width="100%" alignItems="Stretch">
+
+      <!-- Work Queue Summary — click a row to see just that status. -->
+      <VBox class="sectionCard analyticsCard"><layoutData><FlexItemData growFactor="6" baseSize="0"/></layoutData>
+        <HBox justifyContent="SpaceBetween" alignItems="Center">
+          <Text text="WORK QUEUE SUMMARY" class="sectionPill"/>
+          <Button text="Work queue" type="Transparent" icon="sap-icon://slim-arrow-right" iconFirst="false" press=".onGoTickets"/>
+        </HBox>
+        <List items="{ops>/workQueue}" class="opsList" showSeparators="Inner" mode="None" noDataText="No tickets yet.">
+          <StandardListItem title="{ops>label}" info="{ops>count}" type="Active" press=".onWorkQueuePress"/>
+        </List>
+      </VBox>
+
+      <!-- Engineer Overload — who has how much on their plate right now,
+           derived from who tickets are currently assigned to. -->
+      <VBox class="sectionCard analyticsCard"><layoutData><FlexItemData growFactor="0" shrinkFactor="0" baseSize="34rem"/></layoutData>
+        <HBox justifyContent="SpaceBetween" alignItems="Center">
+          <Text text="ENGINEER OVERLOAD" class="sectionPill"/>
+          <Button text="View all" type="Transparent" icon="sap-icon://slim-arrow-right" iconFirst="false" press=".onViewAllEngineersPress"/>
+        </HBox>
+        <Table items="{ops>/engineers}" inset="false" fixedLayout="true" class="opsTable" noDataText="No engineers assigned yet.">
+          <columns>
+            <Column width="11rem"><Text text="Engineer"/></Column>
+            <Column width="5rem" hAlign="Center"><Text text="Assigned"/></Column>
+            <Column width="4rem" hAlign="Center"><Text text="High"/></Column>
+            <Column width="5rem" hAlign="Center"><Text text="Overdue"/></Column>
+            <Column width="7rem" hAlign="Center"><Text text="Workload"/></Column>
+          </columns>
+          <items>
+            <ColumnListItem type="Navigation" press=".onEngineerPress">
+              <cells>
+                <Text text="{ops>name}"/>
+                <Text text="{ops>assigned}"/>
+                <ObjectNumber number="{ops>high}" state="{= ${ops>high} &gt; 0 ? 'Error' : 'None'}"/>
+                <Text text="{ops>overdue}"/>
+                <ObjectStatus text="{ops>workload}" state="{ops>workloadState}" inverted="true"/>
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </VBox>
+
+      <!-- SLA Monitor: donut (within / due soon / breached, out of tickets
+           that actually have a due date) beside the soonest-due table. -->
+      <VBox class="sectionCard analyticsCard"><layoutData><FlexItemData growFactor="7" baseSize="0"/></layoutData>
+        <Text text="SLA MONITOR" class="sectionPill"/>
+        <HBox class="slaSplit" width="100%" alignItems="Start">
+          <VBox class="slaDonutCol"><layoutData><FlexItemData growFactor="2" baseSize="0"/></layoutData>
+            <viz:VizFrame id="slaChart" vizType="donut" width="210px" height="210px" uiConfig="{applicationSet:'fiori'}" selectData=".onSlaChartSelect">
+              <viz:dataset>
+                <vizData:FlattenedDataset data="{ops>/slaMonitor/chartData}">
+                  <vizData:dimensions><vizData:DimensionDefinition name="Bucket" value="{ops>name}"/></vizData:dimensions>
+                  <vizData:measures><vizData:MeasureDefinition name="Tickets" value="{ops>count}"/></vizData:measures>
+                </vizData:FlattenedDataset>
+              </viz:dataset>
+              <viz:feeds>
+                <vizFeed:FeedItem uid="size" type="Measure" values="Tickets"/>
+                <vizFeed:FeedItem uid="color" type="Dimension" values="Bucket"/>
+              </viz:feeds>
+            </viz:VizFrame>
+            <Text text="{= ${ops>/slaMonitor/withinPercent} + '% Within SLA'}" class="subPill sapUiTinyMarginTop"/>
+          </VBox>
+          <VBox class="slaRiskCol"><layoutData><FlexItemData growFactor="3" baseSize="0"/></layoutData>
+            <Text text="Top SLA at Risk" class="subPill"/>
+            <Table items="{ops>/atRisk}" inset="false" class="opsTable" noDataText="Nothing at risk right now.">
+              <columns>
+                <Column><Text text="Ticket"/></Column>
+                <Column hAlign="Center"><Text text="Priority"/></Column>
+                <Column hAlign="End"><Text text="Due"/></Column>
+              </columns>
+              <items>
+                <ColumnListItem type="Navigation" press=".onAtRiskPress">
+                  <cells>
+                    <Text text="{ops>ticketNumber}"/>
+                    <ObjectStatus text="{ops>priority}" state="{path: 'ops>priority', formatter: '.formatPriorityState'}" inverted="true"/>
+                    <Text text="{ops>dueText}"/>
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </VBox>
+        </HBox>
+      </VBox>
+    </HBox>
+
+    <!-- ===================== ROW 2: TEAM PERFORMANCE | OPEN TICKET TREND ===================== -->
+    <HBox class="analyticsRow" wrap="Wrap" width="100%" alignItems="Stretch">
+
+      <!-- Support Team Performance — click a row to see just that team. -->
+      <VBox class="sectionCard analyticsCard"><layoutData><FlexItemData growFactor="3" baseSize="0"/></layoutData>
+        <Text text="SUPPORT TEAM PERFORMANCE" class="sectionPill"/>
+        <Table items="{ops>/teamPerformance}" inset="false" class="opsTable" noDataText="No team data.">
+          <columns>
+            <Column><Text text="Team"/></Column>
+            <Column hAlign="End"><Text text="Total"/></Column>
+            <Column hAlign="End"><Text text="Open"/></Column>
+            <Column hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="High"/></Column>
+            <Column hAlign="End" minScreenWidth="Tablet" demandPopin="true"><Text text="Avg Resolution"/></Column>
+            <Column hAlign="End"><Text text="On-Time %"/></Column>
+          </columns>
+          <items>
+            <ColumnListItem type="Navigation" press=".onTeamPress">
+              <cells>
+                <Text text="{ops>team}"/>
+                <Text text="{ops>total}"/>
+                <Text text="{ops>open}"/>
+                <Text text="{ops>high}"/>
+                <Text text="{= ${ops>avgResolutionHours} + ' hrs'}"/>
+                <ObjectStatus text="{= ${ops>slaPercent} + '%'}" state="{= ${ops>slaPercent} &gt;= 80 ? 'Success' : (${ops>slaPercent} &gt;= 50 ? 'Warning' : 'Error') }" inverted="true"/>
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </VBox>
+
+      <!-- Open Ticket Trend — Created vs. Resolved per day. -->
+      <VBox class="sectionCard analyticsCard"><layoutData><FlexItemData growFactor="2" baseSize="0"/></layoutData>
+        <HBox justifyContent="SpaceBetween" alignItems="Center">
+          <Text text="OPEN TICKET TREND" class="sectionPill"/>
+          <Select id="trendRangeSelect" width="8.5rem" selectedKey="14" change=".onTrendRangeChange">
+            <core:Item key="7" text="Last 7 Days"/>
+            <core:Item key="14" text="Last 14 Days"/>
+            <core:Item key="30" text="Last 30 Days"/>
+          </Select>
+        </HBox>
+        <viz:VizFrame id="trendChart" vizType="line" height="290px" uiConfig="{applicationSet:'fiori'}" selectData=".onTrendChartSelect">
+          <viz:dataset>
+            <vizData:FlattenedDataset data="{ops>/trend}">
+              <vizData:dimensions>
+                <vizData:DimensionDefinition name="Day" value="{ops>label}"/>
+              </vizData:dimensions>
+              <vizData:measures>
+                <vizData:MeasureDefinition name="Created" value="{ops>created}"/>
+                <vizData:MeasureDefinition name="Resolved" value="{ops>resolved}"/>
+              </vizData:measures>
+            </vizData:FlattenedDataset>
+          </viz:dataset>
+          <viz:feeds>
+            <vizFeed:FeedItem uid="valueAxis" type="Measure" values="Created,Resolved"/>
+            <vizFeed:FeedItem uid="categoryAxis" type="Dimension" values="Day"/>
+          </viz:feeds>
+        </viz:VizFrame>
+      </VBox>
+    </HBox>
+
+    <!-- ===================== ROW 3: AGING | TOP CATEGORIES ===================== -->
+    <HBox class="analyticsRow" wrap="Wrap" width="100%" alignItems="Stretch">
+
+      <!-- Aging Analysis -->
+      <VBox class="sectionCard analyticsCard"><layoutData><FlexItemData growFactor="1" baseSize="0"/></layoutData>
+        <Text text="AGING ANALYSIS · OPEN TICKETS" class="sectionPill"/>
+        <HBox alignItems="Center" class="slaMonitorRow">
+          <viz:VizFrame id="agingChart" vizType="donut" width="210px" height="210px" uiConfig="{applicationSet:'fiori'}" selectData=".onAgingChartSelect">
+            <viz:dataset>
+              <vizData:FlattenedDataset data="{ops>/aging/buckets}">
+                <vizData:dimensions><vizData:DimensionDefinition name="Bucket" value="{ops>name}"/></vizData:dimensions>
+                <vizData:measures><vizData:MeasureDefinition name="Tickets" value="{ops>count}"/></vizData:measures>
+              </vizData:FlattenedDataset>
+            </viz:dataset>
+            <viz:feeds>
+              <vizFeed:FeedItem uid="size" type="Measure" values="Tickets"/>
+              <vizFeed:FeedItem uid="color" type="Dimension" values="Bucket"/>
+            </viz:feeds>
+          </viz:VizFrame>
+          <VBox class="legend" items="{ops>/aging/buckets}">
+            <HBox class="leg-row" justifyContent="SpaceBetween" alignItems="Center">
+              <Text text="{ops>name}" class="catName"/>
+              <Text text="{ops>count}" class="catCount"/>
+            </HBox>
+          </VBox>
+        </HBox>
+        <MessageStrip
+          text="{= ${ops>/aging/over7} + ' tickets are older than 7 days — reassign to available engineers now.'}"
+          type="Warning" showIcon="true" class="sapUiTinyMarginTop"/>
+      </VBox>
+
+      <!-- Top Categories -->
+      <VBox class="sectionCard analyticsCard"><layoutData><FlexItemData growFactor="1" baseSize="0"/></layoutData>
+        <Text text="TOP CATEGORIES · OPEN" class="sectionPill"/>
+        <List items="{ops>/categories}" class="catList" noDataText="No category data yet." growing="false" mode="None">
+          <CustomListItem type="Active" press=".onCategoryPress">
+            <VBox class="catRow">
+              <HBox justifyContent="SpaceBetween">
+                <Text text="{ops>name}" class="catName"/>
+                <Text text="{ops>count}" class="catCount"/>
+              </HBox>
+              <ProgressIndicator percentValue="{ops>percent}" displayValue="{ops>percent}%" showValue="false" class="catBar" state="Information"/>
+            </VBox>
+          </CustomListItem>
+        </List>
+      </VBox>
+    </HBox>
+
+  </Page>
+</mvc:View>

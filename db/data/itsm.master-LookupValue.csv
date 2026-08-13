@@ -1,0 +1,89 @@
+ID,lookupType,code,name,description,sequence,isDefault,isActive
+25b8bb95-464a-4185-b06a-8125ba6df16b,TICKETTYPE,INCIDENT,Incident,,10,true,true
+0a2e41bc-912d-488d-a6d5-c593de8b4f28,TICKETTYPE,SERVICE_REQUEST,Service Request,,20,false,true
+4d8e2007-b761-4f40-86fb-711af5868c6e,TICKETTYPE,CHANGE,Change Request,,30,false,true
+9de35f94-5fa7-4077-9f79-96663a8ed7fa,TICKETTYPE,PROBLEM,Problem,,40,false,true
+7a5b6f1e-2c3d-4e4f-8a9b-0c1d2e3f4a5b,STATUS,DRAFT,Draft,,5,false,true
+16f4d437-950c-4924-bf35-b86793fb7384,STATUS,NEW,New,,10,true,true
+807f49ec-eb89-4651-a9f0-1ee3cb630585,STATUS,IN_PROCESS,In Process,,20,false,true
+f17d9f03-f3f8-4b46-b50d-648c979d68f7,STATUS,CUSTOMER_ACTION,Customer Action,,30,false,true
+990d95e1-51f1-4a9e-ae8a-6f60b7c7304c,STATUS,SOLUTION_PROPOSED,Solution Proposed,,40,false,true
+381cfde5-e228-4a2a-9ed6-cc08fda245ed,STATUS,CONFIRMED,Confirmed,,50,false,true
+15a70256-eb09-46ad-8675-f9c5732798b4,STATUS,CLOSED,Closed,,60,false,true
+2edeb8e4-81f6-41f8-966e-c2002673d249,SUBSTATUS,INVESTIGATION,Investigation,,10,true,true
+5411856b-9d41-42bc-9cfe-df22ee397089,SUBSTATUS,AWAITING_VENDOR,Awaiting SAP / Vendor,,20,false,true
+935c0b53-9010-4c50-8eb5-53e06bf6e832,SUBSTATUS,AWAITING_CUSTOMER,Awaiting Customer,,30,false,true
+944f8a69-ac2d-4be2-8fbf-0bf717b068a2,SUBSTATUS,TESTING,Testing,,40,false,true
+2e23c5d2-081a-47ec-ab0d-90f37466e9b3,SUBSTATUS,PENDING_DEPLOYMENT,Pending Deployment,,50,false,true
+5ca21ff0-d38d-49ee-9012-a418a34cf78b,SUBSTATUS,ROOT_CAUSE_ANALYSIS,Root Cause Analysis,,60,false,true
+c93fd087-004a-42a4-a7c7-ae0121718067,SUBSTATUS,AWAITING_APPROVAL,Awaiting Approval,,70,false,true
+6abc2a84-5c2f-466e-ba65-0053978a0323,IMPACT,HIGH,High - Enterprise Wide,,10,true,true
+1ada7692-1396-4a0f-94d8-188c16a39b6a,IMPACT,MEDIUM,Medium - Department,,20,false,true
+dc65d470-a325-4615-aad4-3e8389da6789,IMPACT,LOW,Low - Single User,,30,false,true
+c65b8e6e-3471-4649-ab7c-e2db943ace0f,URGENCY,HIGH,High,,10,true,true
+e2c7a974-5c27-4da7-b85c-7058ef456944,URGENCY,MEDIUM,Medium,,20,false,true
+6ed8238d-ce30-4900-9025-5f0a57ba9c34,URGENCY,LOW,Low,,30,false,true
+72171c19-bbb7-4b0c-ad2b-89c0aa7c81cc,PRIORITY,CRITICAL,P1 - Critical,,10,true,true
+78e0588f-f743-4156-9ecf-1de595d5ac47,PRIORITY,HIGH,P2 - High,,20,false,true
+ef15c3ba-ddb9-4699-874c-9d39e04bd54b,PRIORITY,MEDIUM,P3 - Medium,,30,false,true
+04153352-fc57-42eb-8d0b-2e357a941b20,PRIORITY,LOW,P4 - Low,,40,false,true
+c80f8f94-505d-4aff-9a59-94ac35ee14cb,SOLUTION,CONFIG_CHANGE,Configuration Change,,10,true,true
+04d6a9c2-1d65-4cf9-8af9-a97cade42c5b,SOLUTION,CODE_FIX,Code Fix / Correction,,20,false,true
+b9558ae3-f287-4f78-98b2-0340f991f00d,SOLUTION,DATA_CORRECTION,Data Correction,,30,false,true
+bb33265c-d9b7-4cd1-ba74-80c1fa9ec03e,SOLUTION,SAP_NOTE_APPLIED,SAP Note Applied,,40,false,true
+7be97986-f38f-408b-b94a-2212dd499ec6,SOLUTION,ACCESS_PROVISIONED,Access Provisioned,,50,false,true
+0491769b-9cec-48b3-b2f8-c2ad20798e57,SOLUTION,USER_TRAINING,User Training / Guidance,,60,false,true
+a488a9c3-0c46-4e04-b532-37d603bfa280,SOLUTION,WORKAROUND,Workaround Provided,,70,false,true
+6fd53db1-a905-45e2-979b-4afb6e35abd0,SOLUTION,NO_FIX_REQUIRED,No Fix Required,,80,false,true
+baa74826-23cc-4db3-9d0d-a70ccf1cd702,SUPPORTTEAM,SAP_FICO,SAP FI/CO Team,,10,true,true
+2a9a282f-4ff4-465b-b1d2-e162bfdf5901,SUPPORTTEAM,SAP_MM_SD,SAP MM/SD Team,,20,false,true
+3c4d1ac6-8338-4b74-bf6b-9129581c7b54,SUPPORTTEAM,SAP_HCM,SAP HCM Team,,30,false,true
+45b50dc6-7b73-4779-8100-d80d5b2133aa,SUPPORTTEAM,SAP_PP_WM,SAP PP/WM Team,,40,false,true
+13a8bdb0-805a-45fc-8868-f6cbffdf3e3c,SUPPORTTEAM,SAP_BASIS,SAP Basis Team,,50,false,true
+518d9dec-58f6-4cb2-a7cd-4e796da5650d,SUPPORTTEAM,SAP_ABAP,SAP ABAP Development Team,,60,false,true
+c7abb7dc-f787-4809-9063-d9fd29595222,SUPPORTTEAM,SAP_SECURITY,SAP Security & Authorizations Team,,70,false,true
+7254938a-c202-405c-8290-73a59725fe50,SUPPORTTEAM,SAP_BW,SAP BW/Analytics Team,,80,false,true
+1300c662-c7ac-4124-be80-f8c07099d934,SUPPORTTEAM,SAP_INTEGRATION,SAP Integration (PI/PO) Team,,90,false,true
+5e3b4483-8ea0-43b3-8f92-5f89a3b80ce8,SUPPORTTEAM,SERVICE_DESK_L1,Service Desk (L1),,100,false,true
+4e6f46a9-bbfd-4458-8b71-4d682646c7a1,CATEGORY1,FI,Finance (FI),,10,true,true
+3501499c-5cef-44a0-9d29-dc96186e745d,CATEGORY1,CO,Controlling (CO),,20,false,true
+e088acec-5be2-4b1c-ac09-34b8063ad828,CATEGORY1,MM,Materials Management (MM),,30,false,true
+78ec4479-5d48-4647-b262-6b8e70d0a1cc,CATEGORY1,SD,Sales & Distribution (SD),,40,false,true
+f19abb48-07d9-4821-aa4d-67be864965d1,CATEGORY1,HCM,Human Capital Management (HCM),,50,false,true
+34eb7a12-367f-4ad2-9985-ca807abb7261,CATEGORY1,PP,Production Planning (PP),,60,false,true
+87b50cc5-e4ba-49eb-9c18-b004e2e129ec,CATEGORY1,WM,Warehouse Management (WM),,70,false,true
+7b617ef5-b950-4f9c-b6d9-ae93e8d804fd,CATEGORY1,BASIS,Basis / Infrastructure,,80,false,true
+e3ddefb4-b95b-4273-a6f7-190148bbd157,CATEGORY1,ABAP,ABAP Development,,90,false,true
+59b05e1d-d1a0-44cb-9b0b-80222cd3b7d7,CATEGORY1,BW,BW / Analytics,,100,false,true
+b6106d67-0ba8-45a3-a336-7eb6e4bd41dc,CATEGORY1,SECURITY,Security & Authorizations,,110,false,true
+25adae70-73e8-4cb3-ae0d-f03d91842f9f,CATEGORY1,PI_PO,Integration (PI/PO),,120,false,true
+f8ca0514-18e6-4f67-9aa2-2d66fc6146ea,CATEGORY1,FIORI,Fiori / UI5,,130,false,true
+0019a433-1a44-4833-bae8-213c026118b9,CATEGORY2,ACCESS,Access / Authorization,,10,true,true
+d4656e57-1118-41bd-ae95-4e221ca2af0a,CATEGORY2,PERFORMANCE,Performance,,20,false,true
+ea46598a-4588-485f-b8e3-d2138aeec79f,CATEGORY2,DATA_ISSUE,Data Issue,,30,false,true
+6cb89693-a2e5-42ac-b997-adb2255238d9,CATEGORY2,CONFIGURATION,Configuration,,40,false,true
+526dacb3-1dc9-46cb-8591-044af5fe7ee9,CATEGORY2,INTERFACE_ERROR,Interface Error,,50,false,true
+3b255e16-588e-4690-a05e-29b9cd4c34da,CATEGORY2,REPORT_ISSUE,Report Issue,,60,false,true
+71b49c5c-852c-41fb-883a-d5a4a5c36dd6,CATEGORY2,ENHANCEMENT,Enhancement Request,,70,false,true
+41a06943-f4c6-49f0-9de2-e54080ec5fb4,CATEGORY2,BUG,Bug / Defect,,80,false,true
+d4b632d9-e2ae-4ba4-a19a-5f5f9c420557,CATEGORY3,PRODUCTION,Production,,10,true,true
+a294cbc4-aa25-44da-881b-cc1ec7876457,CATEGORY3,QUALITY,Quality Assurance,,20,false,true
+57d423ad-7c6e-4480-bf25-3c04629bbde2,CATEGORY3,DEVELOPMENT,Development,,30,false,true
+b894a936-b666-40c4-99b7-68c34be2ff26,CATEGORY3,SANDBOX,Sandbox,,40,false,true
+56ac3743-30be-4dff-9cca-ee2613b7b3a1,CATEGORY4,P2P,Procure to Pay,,10,true,true
+a4853b98-278c-4e07-a9d0-f87486b40560,CATEGORY4,O2C,Order to Cash,,20,false,true
+38a446f6-c927-40a7-8ead-4ee76010325e,CATEGORY4,R2R,Record to Report,,30,false,true
+4910029d-fde0-48bd-83de-69cd627c05b2,CATEGORY4,H2R,Hire to Retire,,40,false,true
+5ddb6aa1-32db-4110-a921-08a888996377,CATEGORY4,P2M,Plan to Produce,,50,false,true
+a3ae2876-0ee5-4e3f-b2cd-827a8677974b,IRT_STATUS,NOT_STARTED,Not Started,,10,true,true
+a8928b49-109a-4965-bedc-5c653b5b8520,IRT_STATUS,IN_PROGRESS,In Progress,,20,false,true
+0c84f81d-1ae5-4979-bfba-1680a6ef458c,IRT_STATUS,COMPLETED,Completed,,30,false,true
+9938c183-82ba-4464-a9d3-09f46248b370,IRT_STATUS,BREACHED,Breached,,40,false,true
+485e0c77-130f-4857-8dbd-6d0d886ac58b,MPT_STATUS,NOT_STARTED,Not Started,,10,true,true
+948fd852-419a-4d92-93a2-ebba98ad224d,MPT_STATUS,IN_PROGRESS,In Progress,,20,false,true
+fd9b72e6-21f3-42ba-831a-c27dc5ab20a7,MPT_STATUS,COMPLETED,Completed,,30,false,true
+dd38aff0-5595-4ad0-9963-fc421b8ababd,MPT_STATUS,BREACHED,Breached,,40,false,true
+77e188db-d512-41bd-ad97-3d104bcc47ca,WORKING_AREA,FUNCTIONAL,Functional,,10,true,true
+b63567af-0b19-4b01-b08c-568c04507f4c,WORKING_AREA,TECHNICAL,Technical,,20,false,true
+58edbced-1ef9-4e79-8997-e1085c4ceaab,WORKING_AREA,BASIS,Basis,,30,false,true
+0583087a-080a-4ab9-87da-d4b1f131bf95,WORKING_AREA,SECURITY,Security,,40,false,true
