@@ -27,12 +27,16 @@
         "users": {
           "sachin": { "password": "sachin123", "roles": ["ServiceGroup"] },
           "aayush": { "password": "aayush123", "roles": ["Consultant"] },
-          "virat": { "password": "virat123", "roles": ["EndUser"] }
+          "virat": { "password": "virat123", "roles": ["EndUser"] },
+          "sarthak": { "password": "sarthak123", "roles": ["ServiceGroup"] },
+          "jatin": { "password": "jatin123", "roles": ["Consultant"] },
+          "punit": { "password": "punit123", "roles": ["EndUser"] }
         }
       },
       "[production]": {
         "auth": "xsuaa"
-      }
+      },
+      "db": "hana"
     }
   }
 }
