@@ -35,7 +35,7 @@
          left-aligned below the header, since the header title itself is
          the fixed app name across every page. -->
     <VBox class="pageSubtitleBlock">
-      <Text text="{= ${ui>/isCreate} ? 'New Ticket' : ('Ticket ' + (${ticketNumber} || '')) }" class="pageTicketId"/>
+      <Text text="{= ${ui>/isCreate} ? 'New Ticket' : (${ticketNumber} || '') }" class="pageTicketId"/>
       <Text text="{= ${shortDescription} ? ${shortDescription} : ${ui>/subtitle} }" class="pageSubtitle"/>
     </VBox>
 
@@ -246,62 +246,8 @@
             <VBox class="formGrid">
 
               <VBox class="formField" visible="{ui>/visibility/technical}">
-                <Label text="Related Request for Change"/>
-                <Input value="{incidentForm/relatedRFC}" editable="{ui>/editable/relatedRFC}" showValueHelp="true" width="100%"/>
-              </VBox>
-
-              <VBox class="formField" visible="{ui>/visibility/technical}">
                 <Label text="Configuration Item"/>
                 <Input value="{incidentForm/configurationItem}" editable="{ui>/editable/configurationItem}" showValueHelp="true" width="100%"/>
-              </VBox>
-
-              <VBox class="formField" visible="{ui>/visibility/technical}">
-                <Label text="System"/>
-                <Input value="{incidentForm/system}" editable="{ui>/editable/system}" width="100%"/>
-              </VBox>
-
-              <VBox class="formField" visible="{ui>/visibility/technical}">
-                <Label text="Software Component"/>
-                <Input value="{incidentForm/softwareComponent}" editable="{ui>/editable/softwareComponent}" width="100%"/>
-              </VBox>
-
-              <VBox class="formField" visible="{ui>/visibility/technical}">
-                <Label text="Software Version"/>
-                <Input value="{incidentForm/softwareVersion}" editable="{ui>/editable/softwareVersion}" width="100%"/>
-              </VBox>
-
-              <VBox class="formField" visible="{ui>/visibility/technical}">
-                <Label text="Support Package"/>
-                <Input value="{path: 'incidentForm/supportPackage', type: 'sap.ui.model.odata.type.Int32'}" editable="{ui>/editable/supportPackage}" width="100%"/>
-              </VBox>
-
-              <VBox class="formField" visible="{ui>/visibility/technical}">
-                <Label text="IRT Status"/>
-                <Select selectedKey="{incidentForm/irtStatus}" enabled="{ui>/editable/irtStatus}" forceSelection="false" width="100%"
-                        items="{ path: '/LookupValues', parameters: { $filter : &quot;lookupType eq 'IRT_STATUS' and isActive eq true&quot;, $orderby: 'sequence' } }">
-                  <core:Item key="{code}" text="{name}"/>
-                </Select>
-              </VBox>
-
-              <VBox class="formField" visible="{ui>/visibility/technical}">
-                <Label text="MPT Status"/>
-                <Select selectedKey="{incidentForm/mptStatus}" enabled="{ui>/editable/mptStatus}" forceSelection="false" width="100%"
-                        items="{ path: '/LookupValues', parameters: { $filter : &quot;lookupType eq 'MPT_STATUS' and isActive eq true&quot;, $orderby: 'sequence' } }">
-                  <core:Item key="{code}" text="{name}"/>
-                </Select>
-              </VBox>
-
-              <VBox class="formField" visible="{ui>/visibility/technical}">
-                <Label text="Working Area"/>
-                <Select selectedKey="{incidentForm/workingArea}" enabled="{ui>/editable/workingArea}" forceSelection="false" width="100%"
-                        items="{ path: '/LookupValues', parameters: { $filter : &quot;lookupType eq 'WORKING_AREA' and isActive eq true&quot;, $orderby: 'sequence' } }">
-                  <core:Item key="{code}" text="{name}"/>
-                </Select>
-              </VBox>
-
-              <VBox class="formField" visible="{ui>/visibility/technical}">
-                <Label text="SAP Related"/>
-                <Switch state="{incidentForm/isSapRelated}" enabled="{ui>/editable/isSapRelated}" customTextOn="Yes" customTextOff="No"/>
               </VBox>
 
               <VBox class="formField formFieldWide">

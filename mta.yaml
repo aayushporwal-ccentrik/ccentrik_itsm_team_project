@@ -25,7 +25,7 @@ modules:
           srv-url: ${default-url}
     requires:
       - name: ITSM-auth
-      - name: ITSM-postgres
+      - name: ITSM-db
 
   - name: ITSM-approuter
     type: approuter.nodejs
@@ -38,18 +38,13 @@ modules:
       - name: srv-api
       - name: ITSM-auth
 
-  - name: ITSM-postgres-deployer
-    type: nodejs
-    path: gen/pg
+  - name: ITSM-db-deployer
+    type: hdb
+    path: gen/db
     parameters:
       buildpack: nodejs_buildpack
-      no-route: true
-      no-start: true
-      tasks:
-        - name: deploy-to-postgresql
-          command: npm start
     requires:
-      - name: ITSM-postgres
+      - name: ITSM-db
 
 resources:
   - name: ITSM-auth
@@ -65,8 +60,8 @@ resources:
           credential-types:
             - "binding-secret"
             - "x509"
-  - name: ITSM-postgres
+  - name: ITSM-db
     type: org.cloudfoundry.managed-service
     parameters:
-      service: postgresql-db
-      service-plan: development
+      service: hana
+      service-plan: hdi-shared

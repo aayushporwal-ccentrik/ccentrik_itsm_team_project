@@ -10,6 +10,25 @@ sap.ui.define([
 
   var UPDATE_GROUP = "incidentGroup";
 
+  // oFile.type (browser MIME sniffing) is unreliable for Office documents:
+  // legacy .doc is frequently reported as "" and .docx (a zip container) can
+  // come back as "" or "application/zip" on systems without those types
+  // registered. Fall back to extension-based lookup covering the formats
+  // this form already advertises as supported.
+  var EXTENSION_MIME_TYPES = {
+    pdf: "application/pdf",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    eml: "message/rfc822",
+    msg: "application/vnd.ms-outlook"
+  };
+
   return Controller.extend("itsm.ui.controller.Main", {
 
     onInit: function () {
@@ -190,27 +209,45 @@ sap.ui.define([
     },
 
     onFileSelected: function (oEvent) {
-      var aFiles = oEvent.getParameter("files");
-      if (!aFiles || !aFiles.length) { return; }
+      var aFiles = Array.prototype.slice.call(oEvent.getParameter("files") || []);
+      if (!aFiles.length) { return; }
 
       var oTicketContext = this.getView().getBindingContext();
       var oModel = this.getView().getModel();
       var that = this;
 
-      Array.prototype.forEach.call(aFiles, function (oFile) {
-        var oAttContext = oModel.bindList("attachments", oTicketContext).create({
+      // oAttContext.created() never resolves for an attachment created while
+      // the parent Ticket is itself still unsaved (deep-insert case) — the
+      // child gets folded into the parent's single create request instead of
+      // getting one of its own, and afterwards its context keeps a stale
+      // transient ($uid=...) identity that fails to drill down for any
+      // property. Wait on the batch itself, then read the real, server-
+      // assigned IDs back off oTicketContext (a plain top-level property
+      // read, which does resolve correctly) instead of the child context.
+      aFiles.forEach(function (oFile) {
+        oModel.bindList("attachments", oTicketContext).create({
           fileName: oFile.name,
-          mediaType: oFile.type || "application/octet-stream",
+          mediaType: that._resolveMimeType(oFile),
           fileSize: oFile.size
         });
-
-        oAttContext.created()
-          .then(function () { return that._uploadContent(oAttContext, oFile); })
-          .then(function () { that._refreshAttachments(oTicketContext); })
-          .catch(function () { MessageBox.error("Could not upload " + oFile.name + "."); });
       });
 
-      oModel.submitBatch(UPDATE_GROUP);
+      oModel.submitBatch(UPDATE_GROUP).then(function () {
+        var sTicketId = oTicketContext.getProperty("ticketID");
+        var aSaved = (oTicketContext.getObject() || {}).attachments || [];
+        aFiles.forEach(function (oFile) {
+          var oSaved = aSaved.filter(function (o) {
+            return o.fileName === oFile.name && o.fileSize === oFile.size;
+          }).pop();
+          if (!oSaved) {
+            MessageBox.error("Could not upload " + oFile.name + ".");
+            return;
+          }
+          that._uploadContent(sTicketId, oSaved.ID, oFile)
+            .then(function () { that._refreshAttachments(oTicketContext); })
+            .catch(function () { MessageBox.error("Could not upload " + oFile.name + "."); });
+        });
+      });
     },
 
     // Attachment is only reachable through the Ticket's "attachments" nav
@@ -260,14 +297,20 @@ sap.ui.define([
       });
     },
 
-    _uploadContent: function (oAttContext, oFile) {
-      var sUrl = this._getServiceUrl() + oAttContext.getPath().replace(/^\//, "") + "/content";
+    _uploadContent: function (sTicketId, sAttId, oFile) {
+      var sUrl = this._getServiceUrl() + "Tickets('" + encodeURIComponent(sTicketId) + "')/attachments(ID='" + sAttId + "')/content";
       return fetch(sUrl, {
         method: "PUT",
-        headers: { "Content-Type": oFile.type || "application/octet-stream" },
+        headers: { "Content-Type": this._resolveMimeType(oFile) },
         body: oFile,
         credentials: "same-origin"
       });
+    },
+
+    _resolveMimeType: function (oFile) {
+      if (oFile.type) { return oFile.type; }
+      var sExt = (oFile.name.split(".").pop() || "").toLowerCase();
+      return EXTENSION_MIME_TYPES[sExt] || "application/octet-stream";
     },
 
     _getServiceUrl: function () {
