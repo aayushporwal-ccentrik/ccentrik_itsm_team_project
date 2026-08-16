@@ -17,6 +17,7 @@ mta_archives/
 
 # Other
 .DS_Store
+docs/btp-troubleshooting-log.md
 
 # @cap-js/cds-typer
 @cds-models
