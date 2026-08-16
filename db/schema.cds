@@ -12,13 +12,23 @@ context transaction {
         ticketType       : String;
  
         shortDescription : String;
+        description      : String;
         status           : String;
         subStatus        : String;
         priority         : String;
- 
+
         reportedBy       : String;
+        createdByName     : String;
+        createdByLocation : String;
+        orgName           : String;
         messageProcessor : String;
         supportTeam      : String;
+
+        // Read-only link to the reporting user, purely so the client's
+        // company can be shown/filtered on — reportedBy itself stays the
+        // plain username it always was.
+        reportedByUser : Association to master.User
+            on reportedByUser.userId = reportedBy;
  
         firstResponseAt  : Timestamp;
         dueAt            : Timestamp;
@@ -77,6 +87,13 @@ context transaction {
         fileSize    : Integer;
         storagePath : String;
     }
+
+    entity TicketLog : cuid, managed {
+        receivdDt   : Timestamp;
+        completedDt : Timestamp;
+        ticketID    : String;
+        status      : String;
+    }
 }
  
 context master {
@@ -103,5 +120,22 @@ context master {
         email    : String;
         isActive : Boolean;
         role     : String;
+        client   : String;
+    }
+
+    entity OrganizationSLA : cuid, managed {
+
+        organizationId   : String;
+        organizationName : String;
+
+        impact           : String;
+        urgency          : String;
+        impactedUserFrom : Integer;
+        impactedUserTo   : Integer;
+        priority         : String;
+        firstResponseMinutes : Integer;
+        resolutionMinutes    : Integer;
+
+        isActive : Boolean;
     }
 }

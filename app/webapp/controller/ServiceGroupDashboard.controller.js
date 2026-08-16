@@ -1,13 +1,15 @@
 sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
-  "itsm/ui/model/formatter"
-], function (Controller, JSONModel, formatter) {
+  "itsm/ui/model/formatter",
+  "itsm/ui/model/lookupValues"
+], function (Controller, JSONModel, formatter, fetchLookup) {
   "use strict";
 
   var HIGH_PRIORITY_CODES = ["HIGH", "CRITICAL"];
   var CLOSED_STATUS_CODE = "CLOSED";
   var CHANGE_TICKET_TYPE = "CHANGE";
+  var ALL_CLIENTS = "ALL";
 
   // An engineer with this many overdue tickets or more reads as
   // "Overloaded" instead of "Available". A simple fixed line, not a
@@ -24,6 +26,7 @@ sap.ui.define([
 
     onInit: function () {
       this._iTrendDays = TREND_RANGE_DAYS;
+      this._sSelectedClient = ALL_CLIENTS;
       this.getOwnerComponent().getRouter().getRoute("serviceGroupDashboard").attachPatternMatched(this._onShow, this);
     },
 
@@ -47,18 +50,59 @@ sap.ui.define([
       if (oAgingChart) { oAgingChart.setVizProperties({ plotArea: { colorPalette: CHART_PALETTE }, legend: { visible: false } }); }
     },
 
-    // One read, everything below is worked out from it in memory — no
+    // One read for tickets, plus one small read for users (to resolve each
+    // ticket's client via reportedBy) and the CLIENT lookup names — no
     // point making a separate round trip per KPI tile or table.
     _loadStats: function () {
       var that = this;
-      this.getOwnerComponent().getModel().bindList("/Tickets", undefined, undefined, undefined, {
-        $select: "ticketID,ticketNumber,status,priority,ticketType,messageProcessor,supportTeam,dueAt,firstResponseAt,completedAt,createdAt,assignedAt",
-        $expand: "incidentForm($select=category1)"
-      }).requestContexts().then(function (aContexts) {
-        var aTickets = aContexts.map(function (oCtx) { return oCtx.getObject(); });
+      var oModel = this.getOwnerComponent().getModel();
+
+      Promise.all([
+        oModel.bindList("/Tickets", undefined, undefined, undefined, {
+          $select: "ticketID,ticketNumber,status,priority,ticketType,messageProcessor,supportTeam,dueAt,firstResponseAt,completedAt,createdAt,assignedAt,reportedBy",
+          $expand: "incidentForm($select=category1)"
+        }).requestContexts(),
+        oModel.bindList("/Users", undefined, undefined, undefined, { $select: "userId,client" }).requestContexts(),
+        fetchLookup(oModel, "CLIENT")
+      ]).then(function (aResults) {
+        var aTickets = aResults[0].map(function (oCtx) { return oCtx.getObject(); });
+        var aUsers = aResults[1].map(function (oCtx) { return oCtx.getObject(); });
+        var aClientLookup = aResults[2];
+
+        var mClientByUser = {};
+        aUsers.forEach(function (u) { mClientByUser[u.userId] = u.client; });
+        aTickets.forEach(function (t) { t.client = mClientByUser[t.reportedBy] || ""; });
+
+        // Every known client, not just ones with tickets today — a client
+        // with zero tickets should still be pickable (and correctly show 0s).
+        that._aClientOptions = [{ code: ALL_CLIENTS, name: "All" }].concat(
+          aClientLookup.map(function (r) { return { code: r.code, name: r.name }; })
+        );
+
         that._aAllTickets = aTickets;
-        that.getView().setModel(new JSONModel(that._buildStats(aTickets)), "ops");
+        that._applyClientFilter();
       });
+    },
+
+    // "All" keeps the dashboard unfiltered. This is the one place the
+    // client filter is applied — every KPI/table/chart below is built from
+    // whatever this hands to _buildStats, so nothing else needs to know
+    // about client filtering at all.
+    _applyClientFilter: function () {
+      var sClient = this._sSelectedClient;
+      this._aFilteredTickets = sClient === ALL_CLIENTS
+        ? this._aAllTickets
+        : this._aAllTickets.filter(function (t) { return t.client === sClient; });
+
+      var oStats = this._buildStats(this._aFilteredTickets);
+      oStats.selectedClient = sClient;
+      oStats.clients = this._aClientOptions;
+      this.getView().setModel(new JSONModel(oStats), "ops");
+    },
+
+    onClientChange: function (oEvent) {
+      this._sSelectedClient = oEvent.getSource().getSelectedKey();
+      this._applyClientFilter();
     },
 
     _buildStats: function (aTickets) {
@@ -234,8 +278,8 @@ sap.ui.define([
 
     onTrendRangeChange: function (oEvent) {
       this._iTrendDays = parseInt(oEvent.getSource().getSelectedKey(), 10);
-      if (this._aAllTickets) {
-        this.getView().getModel("ops").setProperty("/trend", this._buildTrend(this._aAllTickets, this._iTrendDays));
+      if (this._aFilteredTickets) {
+        this.getView().getModel("ops").setProperty("/trend", this._buildTrend(this._aFilteredTickets, this._iTrendDays));
       }
     },
 
@@ -254,8 +298,13 @@ sap.ui.define([
 
     // Every "go look at these tickets" row below stashes a filter on the
     // Component, then reuses the same ticket table (Dashboard.view.xml)
-    // instead of building a separate filtered list per widget.
+    // instead of building a separate filtered list per widget. Whatever
+    // client is selected here carries over too, so drilling in doesn't
+    // silently lose the filter.
     _goToFilteredTickets: function (oFilter) {
+      if (this._sSelectedClient && this._sSelectedClient !== ALL_CLIENTS) {
+        oFilter.client = this._sSelectedClient;
+      }
       this.getOwnerComponent().setPendingTicketFilter(oFilter);
       this.getOwnerComponent().getRouter().navTo("dashboard");
     },
@@ -358,7 +407,7 @@ sap.ui.define([
     },
 
     onChangeRequestsTilePress: function () {
-      this._goToFilteredTickets({ ticketType: "CHANGE", excludeClosed: true, label: "Change Requests" });
+      this._goToFilteredTickets({ ticketType: CHANGE_TICKET_TYPE, excludeClosed: true, label: "Change Requests" });
     }
   });
 });

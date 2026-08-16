@@ -63,6 +63,12 @@
             "roles": [
               "EndUser"
             ]
+          },
+          "dev": {
+            "password": "dev123",
+            "roles": [
+              "EndUser"
+            ]
           }
         }
       },

@@ -11,11 +11,17 @@ service ITSMService {
     // a Consultant to assign a ticket to).
     entity Users              as projection on master.User;
  
+    entity OrganizationSLAs   as projection on master.OrganizationSLA;
+
     // Transaction Data
     entity Tickets            as projection on txn.Ticket;
+    entity TicketLogs         as projection on txn.TicketLog;
 
     // Tells the frontend which persona the logged-in user is, so the UI
     // can drive its role-based visibility model (see webapp/model/roleConfig.js).
     function currentUser() returns { persona: String; userName: String; };
+
+    // plain username of the caller.
+    function getCurrUser() returns String;
 
 }

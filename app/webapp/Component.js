@@ -8,8 +8,8 @@ sap.ui.define([
   // persona can open a ticket, the form itself changes based on who is
   // looking (see model/roleConfig.js).
   var CONSULTANT_ROUTES = ["assigned"];
-  var SUPPORT_ONLY_ROUTES = ["serviceGroupDashboard", "sgTickets"];
-  var END_USER_ROUTES = ["dashboard", "analytics", "create"];
+  var SUPPORT_ONLY_ROUTES = ["serviceGroupDashboard"];
+  var END_USER_ROUTES = ["dashboard", "create"];
 
   // Home page URL for each persona. Same value as the route pattern in
   // manifest.json.
