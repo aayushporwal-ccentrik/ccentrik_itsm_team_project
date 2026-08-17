@@ -11,57 +11,40 @@ context transaction {
         ticketNumber     : String;
         ticketType       : String;
  
-        shortDescription : String;
+        description     : String;
         status           : String;
         subStatus        : String;
-        priority         : String;
  
-        reportedBy       : String;
-        messageProcessor : String;
-        supportTeam      : String;
- 
-        firstResponseAt  : Timestamp;
-        dueAt            : Timestamp;
-        completedAt      : Timestamp;
-        assignedAt       : Timestamp;
+        createdByName       : String;
+        createdByLocation   : String;
+        messageProcessor    : String;
+        orgName             : String;
  
         incidentForm : Composition of one IncidentForm
             on incidentForm.ticketID = $self.ticketID;
            
         attachments : Composition of many Attachment
             on attachments.ticketID = $self.ticketID;
+
+        ticketLogs : Composition of many TicketLog
+            on ticketLogs.ticketID = $self.ticketID;
     }
  
     entity IncidentForm : cuid {
  
-        ticketID : String(30);
+        ticketID : String;
+ 
         description : LargeString;
-        category1        : String;
-        category2        : String;
-        category3        : String;
-        category4        : String;
-        solutionCategory : String;
  
-        impact              : String;
-        urgency             : String;
+        category1 : String;
+        category2 : String;
+        category3 : String;
+        category4 : String;
+ 
+        impact : String;
+        urgency : String;
         recommendedPriority : String;
- 
-        language   : String(50);
-        isStandard : Boolean;
- 
-        system            : String;
-        softwareComponent : String;
-        softwareVersion   : String;
-        supportPackage    : Integer;
         configurationItem : String;
-        relatedRFC        : String;
- 
-        irtStatus : String;
-        mptStatus : String;
- 
-        workingArea  : String;
-        isSapRelated : Boolean;
- 
     }
  
     entity Attachment : cuid, managed {
@@ -76,6 +59,20 @@ context transaction {
         fileName    : String;
         fileSize    : Integer;
         storagePath : String;
+    }
+ 
+    entity TicketLog : cuid, managed {
+    ticketID        : String;     
+    stage           : String;     
+    status          : String;      
+    userName        : String;     
+    userEmail       : String;
+    role            : String;     
+    receivedDt      : DateTime;    
+    completionDt    : DateTime;   
+    pendingWith     : String;      
+    pendingWithName : String;      
+    remarks         : String(4000); 
     }
 }
  
@@ -104,4 +101,22 @@ context master {
         isActive : Boolean;
         role     : String;
     }
+ 
+    entity OrganizationSLA : cuid, managed {
+ 
+        organizationId : String;
+        organizationName : String;
+ 
+        impact : String;
+        urgency : String;
+        impactedUserFrom : Integer;
+        impactedUserTo   : Integer;
+        priority : String;
+        firstResponseMinutes : Integer;
+        resolutionMinutes    : Integer;
+ 
+        isActive : Boolean;
+    }
 }
+ 
+ 
