@@ -1,17 +1,11 @@
 {
-  "welcomeFile": "/webapp/index.html",
+  "welcomeFile": "/index.html",
   "authenticationMethod": "route",
   "routes": [
     {
-      "source": "^/odata/(.*)$",
+      "source": "^/?odata/(.*)$",
       "target": "/odata/$1",
-      "destination": "srv-api",
-      "authenticationType": "xsuaa"
-    },
-    {
-      "source": "^/webapp/(.*)$",
-      "target": "$1",
-      "localDir": "webapp",
+      "destination": "ITSM-srv",
       "authenticationType": "xsuaa"
     },
     {

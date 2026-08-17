@@ -11,7 +11,6 @@ build-parameters:
       commands:
         - npm ci
         - npx cds build --production
-        - cp -r app/webapp app/router/webapp
 modules:
   - name: ITSM-srv
     type: nodejs
@@ -28,25 +27,6 @@ modules:
     requires:
       - name: ITSM-auth
       - name: ITSM-db
-      - name: ITSM-destination
-
-  - name: ITSM-approuter
-    type: approuter.nodejs
-    path: app/router
-    parameters:
-      keep-existing-routes: true
-      disk-quota: 256M
-      memory: 256M
-    requires:
-      - name: srv-api
-        group: destinations
-        properties:
-          name: srv-api
-          url: ~{srv-url}
-          forwardAuthToken: true
-      - name: ITSM-auth
-      - name: ITSM-destination
-      - name: ITSM-html5-runtime
 
   - name: ITSM-db-deployer
     type: hdb
@@ -56,16 +36,27 @@ modules:
     requires:
       - name: ITSM-db
 
+  - name: ITSM-ui
+    type: html5
+    path: app/webapp
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - mkdir -p dist
+        - zip -r dist/itsm.ui.zip . -x "dist/*"
+      supported-platforms: []
+
   - name: ITSM-app-deployer
     type: com.sap.application.content
     path: gen
     build-parameters:
-      build-result: app/
+      build-result: resources
       requires:
-        - name: ITSMwebapp
+        - name: ITSM-ui
           artifacts:
-            - webapp.zip
-          target-path: app/
+            - itsm.ui.zip
+          target-path: resources/
     requires:
       - name: ITSM-auth
       - name: srv-api
@@ -85,19 +76,7 @@ modules:
             HTML5.ForwardAuthToken: true
             HTML5.DynamicDestination: true
 
-  - name: ITSMwebapp
-    type: html5
-    path: app/webapp
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      supported-platforms:
-        []
-
-  - name: ITSM-destinations
+  - name: ITSM-destinationcontent
     type: com.sap.application.content
     requires:
       - name: ITSM-auth
@@ -107,27 +86,26 @@ modules:
       - name: ITSM-html5-repo-host
         parameters:
           service-key:
-            name: ITSM-html5-repo-host-key
-      - name: srv-api
+            name: ITSM-repo-host-key
       - name: ITSM-destination
         parameters:
           content-target: true
-    build-parameters:
-      no-source: true
     parameters:
       content:
         instance:
-          existing_destinations_policy: update
           destinations:
             - Name: ITSM-html5-repository
               ServiceInstanceName: ITSM-html5-repo-host
-              ServiceKeyName: ITSM-html5-repo-host-key
-              sap.cloud.service: ITSM.service
-            - Name: ITSM-auth
-              Authentication: OAuth2UserTokenExchange
+              ServiceKeyName: ITSM-repo-host-key
+              sap.cloud.service: ITSM
+            - Authentication: OAuth2UserTokenExchange
+              Name: ITSM-uaa
               ServiceInstanceName: ITSM-auth
               ServiceKeyName: ITSM-auth-key
-              sap.cloud.service: ITSM.service
+              sap.cloud.service: ITSM
+          existing_destinations_policy: update
+    build-parameters:
+      no-source: true
 
 resources:
   - name: ITSM-auth
@@ -144,14 +122,6 @@ resources:
     parameters:
       service: hana
       service-plan: hdi-shared
-  - name: ITSM-destination
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: destination
-      service-plan: lite
-    requires:
-      - name: srv-api
-
   - name: ITSM-html5-repo-host
     type: org.cloudfoundry.managed-service
     parameters:
@@ -162,3 +132,28 @@ resources:
     parameters:
       service: html5-apps-repo
       service-plan: app-runtime
+  - name: ITSM-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+      config:
+        HTML5Runtime_enabled: true
+        init_data:
+          instance:
+            destinations:
+              - Name: ITSM-srv
+                URL: ~{srv-api/srv-url}
+                Type: HTTP
+                ProxyType: Internet
+                Authentication: NoAuthentication
+                HTML5.DynamicDestination: true
+                HTML5.ForwardAuthToken: true
+              - Name: ui5
+                URL: https://ui5.sap.com
+                Type: HTTP
+                ProxyType: Internet
+                Authentication: NoAuthentication
+            existing_destinations_policy: update
+    requires:
+      - name: srv-api

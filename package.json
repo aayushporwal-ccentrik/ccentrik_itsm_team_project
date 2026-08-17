@@ -71,6 +71,7 @@
               "EndUser"
             ]
           },
+
           "kirpal": {
             "password": "kirpal123",
             "roles": [
@@ -91,10 +92,7 @@
       "[hybrid]": {
         "db": "hana"
       },
-      "db": "hana",
-      "destinations": true,
-      "html5-repo": true,
-      "workzone": true
+      "db": "hana"
     }
   }
 }
