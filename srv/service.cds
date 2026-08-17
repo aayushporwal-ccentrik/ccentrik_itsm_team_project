@@ -23,6 +23,8 @@ service ITSMService {
         { grant: 'READ',         to: 'ServiceGroup' },
         { grant: 'UPDATE',       to: 'ServiceGroup' },
         { grant: 'assignTicket', to: 'ServiceGroup' },
+        { grant: 'READ',         to: 'Consultant' },
+        { grant: 'UPDATE',       to: 'Consultant' }
     ]
     entity Tickets            as projection on txn.Ticket
     actions {

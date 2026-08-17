@@ -33,8 +33,6 @@ module.exports = cds.service.impl(function () {
   this.on("assignTicket", "Tickets", onAssignTicket);
   this.before("UPDATE", "Organizations", onBeforeUpdateOrganization);
 });
-
-// Tells the frontend which persona/theme the logged-in user has.
 async function onCurrentUser(req) {
   var sPersona = "END_USER";
   if (req.user.is("Admin")) { sPersona = "ADMIN"; }
@@ -43,7 +41,6 @@ async function onCurrentUser(req) {
 
   return { persona: sPersona, userName: req.user.id, theme: await resolveUserTheme(req.user.id) };
 }
-
 async function resolveUserTheme(sUserId) {
   const oUser = await SELECT.one.from(User).where({ userId: sUserId });
   if (!oUser || !oUser.client) { return null; }
@@ -59,9 +56,6 @@ async function resolveUserTheme(sUserId) {
     logo: oOrg.logo
   };
 }
-
-// Generates ticketID/ticketNumber and sets the fields that must come
-// from the server, not the client.
 async function onBeforeCreateTicket(req) {
   const ticket = req.data;
   const identifiers = await generateTicketIdentifiers(ticket.ticketType);
@@ -73,7 +67,6 @@ async function onBeforeCreateTicket(req) {
   ticket.reportedBy = req.user.id;
   ticket.createdByName = req.user.id;
 }
-
 async function onBeforeUpdateTicket(req) {
   if (req.data.messageProcessor) {
     req.data.assignedAt = new Date().toISOString();
@@ -81,10 +74,6 @@ async function onBeforeUpdateTicket(req) {
   if (req.data.status === "CLOSED") {
     req.data.completedAt = new Date().toISOString();
   }
-
-  // incidentForm fields come in nested under the ticket PATCH; CAP's
-  // generic handler can't route that to the child row, so it's applied
-  // here as its own update.
   if (req.data.incidentForm) {
     const oFormData = req.data.incidentForm;
     delete oFormData.ID;
@@ -105,9 +94,6 @@ async function onBeforeUpdateTicket(req) {
     }
   }
 }
-
-// User.client is matched against Organization.code by plain string, so
-// renaming a code has to carry existing users along with it.
 async function onBeforeUpdateOrganization(req) {
   if (!req.data.code) { return; }
 
@@ -117,7 +103,6 @@ async function onBeforeUpdateOrganization(req) {
     await UPDATE(User).set({ client: req.data.code }).where({ client: oOrg.code });
   }
 }
-
 async function generateTicketIdentifiers(sTicketType) {
   const sType = (sTicketType || "GENERAL").trim().toUpperCase();
 
