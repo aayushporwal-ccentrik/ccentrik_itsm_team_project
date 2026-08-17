@@ -2,7 +2,7 @@
   "name": "ITSM",
   "version": "1.0.0",
   "dependencies": {
-    "@cap-js/hana": "^2.8.0",
+    "@cap-js/hana": "^2",
     "@cap-js/postgres": "^2",
     "@sap/cds": "^9",
     "@sap/xssec": "^4"
@@ -68,6 +68,19 @@
             "password": "dev123",
             "roles": [
               "EndUser"
+            ]
+          },
+
+          "kirpal": {
+            "password": "kirpal123",
+            "roles": [
+              "EndUser"
+            ]
+          },
+          "admin": {
+            "password": "admin123",
+            "roles": [
+              "Admin"
             ]
           }
         }

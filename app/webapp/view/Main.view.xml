@@ -19,7 +19,7 @@
                 visible="{ui>/showBack}"
                 press=".onBack"
                 class="sapUiTinyMarginEnd"/>
-        <Image src="images/ccentrik.png" height="30px" densityAware="false" class="appLogo" press=".onGoDashboard"/>
+        <Image src="{= ${role>/theme/logo} || 'images/ccentrik.png' }" height="30px" densityAware="false" class="appLogo" press=".onGoDashboard"/>
       </contentLeft>
       <contentMiddle>
         <Title text="Service Desk" class="appHeaderTitle"/>

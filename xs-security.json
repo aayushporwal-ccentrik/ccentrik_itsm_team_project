@@ -1,14 +1,52 @@
 {
   "scopes": [
-    { "name": "$XSAPPNAME.EndUser", "description": "Can create and view their own tickets" },
-    { "name": "$XSAPPNAME.ServiceGroup", "description": "Can triage, assign and manage all tickets" },
-    { "name": "$XSAPPNAME.Consultant", "description": "Can work tickets assigned to them" }
+    {
+      "name": "$XSAPPNAME.EndUser",
+      "description": "Can create and view their own tickets"
+    },
+    {
+      "name": "$XSAPPNAME.ServiceGroup",
+      "description": "Can triage, assign and manage all tickets"
+    },
+    {
+      "name": "$XSAPPNAME.Consultant",
+      "description": "Can work tickets assigned to them"
+    },
+    {
+      "name": "$XSAPPNAME.Admin",
+      "description": "Manages client organizations, users and roles"
+    }
   ],
   "attributes": [],
   "role-templates": [
-    { "name": "EndUser", "description": "End User", "scope-references": ["$XSAPPNAME.EndUser"] },
-    { "name": "ServiceGroup", "description": "Service Group", "scope-references": ["$XSAPPNAME.ServiceGroup"] },
-    { "name": "Consultant", "description": "Consultant", "scope-references": ["$XSAPPNAME.Consultant"] }
+    {
+      "name": "EndUser",
+      "description": "End User",
+      "scope-references": [
+        "$XSAPPNAME.EndUser"
+      ]
+    },
+    {
+      "name": "ServiceGroup",
+      "description": "Service Group",
+      "scope-references": [
+        "$XSAPPNAME.ServiceGroup"
+      ]
+    },
+    {
+      "name": "Consultant",
+      "description": "Consultant",
+      "scope-references": [
+        "$XSAPPNAME.Consultant"
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Platform Admin",
+      "scope-references": [
+        "$XSAPPNAME.Admin"
+      ]
+    }
   ],
   "authorities-inheritance": false
 }

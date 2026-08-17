@@ -1,0 +1,84 @@
+<mvc:View
+  controllerName="itsm.ui.controller.Organizations"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  displayBlock="true">
+
+  <Page id="orgsPage" showHeader="false" backgroundDesign="Transparent" class="appBg densePage">
+
+    <Bar class="appHeader">
+      <contentLeft>
+        <Image src="images/ccentrik.png" height="30px" densityAware="false" class="appLogo"/>
+      </contentLeft>
+      <contentMiddle>
+        <Title text="Platform Administration" class="appHeaderTitle"/>
+      </contentMiddle>
+    </Bar>
+
+    <VBox class="sectionCard">
+      <Text text="ORGANIZATIONS" class="sectionPill"/>
+
+      <Table
+        id="orgsTable"
+        inset="false"
+        items="{orgs>/organizations}"
+        noDataText="No organizations yet.">
+
+        <headerToolbar>
+          <OverflowToolbar style="Clear">
+            <ToolbarSpacer/>
+            <Select id="statusFilter" width="9rem" selectedKey="ALL" change=".onFilterChange">
+              <core:Item key="ALL" text="All Statuses"/>
+              <core:Item key="ACTIVE" text="Active"/>
+              <core:Item key="INACTIVE" text="Inactive"/>
+            </Select>
+            <SearchField width="16rem" placeholder="Search name or code" search=".onSearch" liveChange=".onSearch"/>
+            <Button text="Add Organization" icon="sap-icon://add" class="submitBtn" press=".onAddOrganization"/>
+          </OverflowToolbar>
+        </headerToolbar>
+
+        <columns>
+          <Column width="18rem"><Text text="Organization"/></Column>
+          <Column width="8rem"><Text text="Code"/></Column>
+          <Column width="6rem" hAlign="Center"><Text text="Users"/></Column>
+          <Column width="8rem"><Text text="Status"/></Column>
+          <Column width="6rem" hAlign="End"><Text text="Actions"/></Column>
+        </columns>
+
+        <items>
+          <ColumnListItem type="Navigation" press=".onOpenOrganization">
+            <cells>
+              <ObjectIdentifier title="{orgs>name}"/>
+              <Text text="{orgs>code}"/>
+              <Text text="{orgs>userCount}"/>
+              <ObjectStatus
+                text="{= ${orgs>isActive} ? 'Active' : 'Inactive' }"
+                state="{= ${orgs>isActive} ? 'Success' : 'Error' }"/>
+              <Button text="Edit" type="Transparent" press=".onOpenOrganization"/>
+            </cells>
+          </ColumnListItem>
+        </items>
+      </Table>
+    </VBox>
+
+    <!-- ===== Add Organization: name + code only, mirrors the KPI tile
+         picker dialog on the Dashboard — isActive defaults true server-side,
+         not shown here. ===== -->
+    <Dialog id="addOrgDialog" title="Add Organization" contentWidth="24rem">
+      <VBox class="sapUiSmallMargin">
+        <Label text="Organization Name" required="true"/>
+        <Input id="newOrgName" width="100%" class="sapUiTinyMarginBottom"/>
+        <Label text="Code" required="true"/>
+        <Input id="newOrgCode" width="100%"/>
+      </VBox>
+      <beginButton>
+        <Button text="Create" type="Emphasized" press=".onSaveOrganization"/>
+      </beginButton>
+      <endButton>
+        <Button text="Cancel" press=".onCancelAddOrganization"/>
+      </endButton>
+    </Dialog>
+
+  </Page>
+</mvc:View>

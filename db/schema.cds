@@ -123,6 +123,24 @@ context master {
         client   : String;
     }
 
+    entity Organization : cuid, managed {
+        code              : String(20);
+        name              : String(100);
+        isActive          : Boolean default true;
+        themeType         : String(20) default 'SOLID';      // 'SOLID' | 'GRADIENT'
+        themeScope        : String(20) default 'HEADER';     // 'HEADER' (header strip + buttons only) | 'BACKGROUND' (whole page canvas, cards/tables stay white)
+        primaryColor      : String(20);
+        secondaryColor    : String(20);
+        gradientDirection : String(20) default 'TOP_BOTTOM'; // fixed by spec, not user-editable
+        logo              : String(500);                     // effective logo URL shown to end users — points at logoContent below once uploaded, or an admin-pasted external URL
+
+        @Core.ContentDisposition.Filename : logoFileName
+        @Core.MediaType : logoMediaType
+        logoContent   : LargeBinary; // set when the admin uploads a file directly, same media-stream mechanism as Attachment.content
+        logoFileName  : String;
+        logoMediaType : String;
+    }
+
     entity OrganizationSLA : cuid, managed {
 
         organizationId   : String;

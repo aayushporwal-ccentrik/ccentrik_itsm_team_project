@@ -7,7 +7,7 @@ Internal IT service management app for **ccentrik**, an SAP services company. Bu
 - **CAP generic first.** Never hand-write SELECT/INSERT/UPDATE when CAP's generic CRUD already does it. Custom backend logic (`before`/`on` handlers in `srv/service.js`) only when genuinely required.
 - **Explain before custom logic.** Before adding any custom backend handler, give a short WHAT/WHY/HOW/WHY-NOT-GENERIC-CAP explanation first, then the smallest implementation that solves it.
 - **Data-driven UI5, not controller if/else.** Role/persona visibility and editability: Role → JSON Model (`webapp/model/roleConfig.js`) → XML binding. No `if (role === 'X')` chains in controllers or views.
-- **Exactly three personas: END_USER, SERVICE_GROUP, CONSULTANT.** Never "Engineer" as a label.
+- **Four personas: END_USER, SERVICE_GROUP, CONSULTANT, ADMIN.** Never "Engineer" as a label. ADMIN (added 2026-08-16) is the Platform Admin — manages organizations/users/theme, has zero ticket-handling access, fully separate from SERVICE_GROUP.
 - **One reusable ticket form** (`Main.view.xml`), not separate forms per persona — it adapts via `roleConfig.js`.
 - **Minimal code, no speculative abstractions.** No new files/helpers/utilities unless there's a real, current need.
 - **Very few comments, plain simple English.** Short sentences, common words, one idea per line. Only comment the *why*, never the *what*.
@@ -16,13 +16,21 @@ Internal IT service management app for **ccentrik**, an SAP services company. Bu
 
 ## Architecture
 
-- `db/schema.cds` — entities: `Ticket`, `IncidentForm` (composition of one), `Attachment` (composition of many), `TicketLog`, `LookupValue`, `TicketCounter`, `User` (has a `client` field for org/customer filtering), `OrganizationSLA`.
-- `srv/service.cds` / `srv/service.js` — `ITSMService`, mostly generic projections. Custom handlers: ticket number generation (`before CREATE`), `assignedAt`/`completedAt` auto-stamping (`before UPDATE`), a deep-update workaround for `incidentForm.*` fields (see gotchas below), `currentUser()`/`getCurrUser()`.
-- `app/webapp/` — 4 routed pages: `Dashboard` (ticket table, shared by END_USER/SERVICE_GROUP), `ServiceGroupDashboard` (analytics), `Main` (create/edit ticket form, shared by all personas), `AssignedTickets` (Consultant's queue).
+- `db/schema.cds` — entities: `Ticket`, `IncidentForm` (composition of one), `Attachment` (composition of many), `TicketLog`, `LookupValue`, `TicketCounter`, `User` (has a `client` field for org/customer filtering — plain string match, not a foreign key), `OrganizationSLA` (unused, no seed data), `Organization` (added 2026-08-16 — `code`/`name`/`isActive`/`themeType`/`primaryColor`/`secondaryColor`/`gradientDirection`; `code` is what `User.client` matches against, still by plain string, not an association).
+- `srv/service.cds` / `srv/service.js` — `ITSMService`, mostly generic projections, all open to any authenticated user (no per-entity `@restrict` — kept deliberately simple, 2026-08-16: added once for `Organizations`/`Users` then explicitly removed at the user's request, "itna secured nahi rakhna"). Custom handlers: ticket number generation (`before CREATE`), `assignedAt`/`completedAt` auto-stamping (`before UPDATE`), a deep-update workaround for `incidentForm.*` fields (see gotchas below), a cascading rename for `Organizations` (`before UPDATE`, see below), `currentUser()`. (`getCurrUser()` existed briefly but was never called from the frontend — removed 2026-08-16 as dead code.)
+- `app/webapp/` — 6 routed pages: `Dashboard` (ticket table, shared by END_USER/SERVICE_GROUP), `ServiceGroupDashboard` (analytics), `Main` (create/edit ticket form, shared by all personas), `AssignedTickets` (Consultant's queue), `Organizations` (Admin's org list), `OrganizationDetail` (Admin's per-org Details/Users/Theme tabs).
 - `app/webapp/model/roleConfig.js` — the persona → field visibility/editability table. Read this before touching any form field's behavior.
 - `app/webapp/model/lookupValues.js` — shared `fetchLookup(oModel, sLookupType)` helper for dropdown data from `LookupValue`.
 - Ticket number format: `INC-00001`, `SRV-00001`, `CHG-00001` (type prefix + 5-digit zero-padded sequence, per-type counter in `TicketCounter`).
 - Status/priority codes are UPPERCASE strings (`DRAFT`, `NEW`, `IN_PROCESS`, ...; `CRITICAL`/`HIGH`/`MEDIUM`/`LOW`), always resolved to display names via `LookupValue`, never hardcoded label strings in the UI.
+
+## Multi-Organization Admin Panel (added 2026-08-16)
+
+- `Organization` replaced `LookupValue(lookupType='CLIENT')` as the source of truth for client identity — those 4 CLIENT lookup rows were removed from `db/data/itsm.master-LookupValue.csv`. `Dashboard.controller.js` and `ServiceGroupDashboard.controller.js`'s client-filter dropdowns now read `/Organizations` directly instead of `fetchLookup(oModel, "CLIENT")`.
+- **ADMIN is its own persona**, mocked user `admin`/`admin123` (role `Admin` in `xs-security.json` + `package.json`). Home route is `organizations`; `Component.js`'s `_guardRoutes` blocks it from every ticket-handling route (including `detail`, which is otherwise open to everyone) and blocks the other three personas from `organizations`/`organizationDetail`.
+- **Live per-org theming**: `currentUser()` also returns `theme` (only populated for END_USER, resolved via `User.client` → `Organization.code`). `Component.js._applyOrgTheme` sets a `--brand-bg` CSS custom property on login; `style.css`'s `.appHeader` reads it with a `var(--brand-bg, #021a86)` fallback, so anyone without an org theme (or Service Group/Consultant/Admin) sees the exact original navy, unchanged. Admin-typed color values are validated as `^#[0-9a-fA-F]{3,8}$` before ever reaching a real `style` property or CSS injection point (both in `formatter.js`'s `formatThemePreviewHtml` and `Component.js`'s `_applyOrgTheme`) — they're free text from an `Input`, not a trusted source.
+- **Password reset is intentionally not built.** Production auth is XSUAA with no IAS/identity-provisioning service bound in `mta.yaml` — a "reset password" button would have no backend to call. Only `User.isActive` (Activate/Deactivate) is real. Creating a "user" via the Admin panel only creates the `User` DB row — a working login still needs manual provisioning (`package.json` locally, identity provider in prod), same as `sarthak`/`jatin`/`punit` already are.
+- Color picker on the Theme tab is `sap.ui.unified.ColorPickerPopover` (library already available via `sap.ui.unified`, same one `Main.view.xml`'s `FileUploader` uses) — opened by a small palette button next to the hex `Input`, not a replacement for it.
 
 ## Known UI5/CAP gotchas (don't rediscover these)
 
@@ -32,6 +40,7 @@ Internal IT service management app for **ccentrik**, an SAP services company. Bu
 - **Deep-updating a composition child** (`incidentForm.*` fields) via a flat relative path (`{incidentForm/system}`) sends the PATCH nested inside the parent ticket's body, without the child row's own key — CAP's generic handler silently drops it. Fixed in `srv/service.js`'s `before UPDATE Tickets` handler: it pulls `req.data.incidentForm` out and issues an explicit `UPDATE` against `IncidentForm` matched by `ticketID`. If you add new deep-updatable child fields, this already handles it — no per-field code needed.
 - **`sap.viz` VizFrame charts inside a `$batch` request to a nav-relative path can 404** if the request isn't part of a properly declared changeset — test nav-relative filters/updates with a raw `curl` against the OData service before assuming a UI bug.
 - **This app's `index.html` is hand-written, not CAP-generated** — `cds watch`'s LiveReload does not inject into it. Manual hard-refresh (Ctrl+Shift+R) is needed after any client-side (view/controller/CSS) change. Confirmed working as expected otherwise; not worth chasing further.
+- **A UI5 aggregation (`items="{model>/path}"`) bound to a model that's never been set renders nothing — not zeros, not a placeholder, just an empty row.** If that model is created only inside an async `.then()` (e.g. after an OData fetch), with no default seed and no `.catch()`, then either an empty result *or* a failed/slow request leaves the aggregation with nothing to bind to. Fix pattern: seed the model synchronously in `onInit` with the default/zeroed shape, and always add a `.catch()` that falls back to that same shape. Applied to the Dashboard's KPI tile row (`Dashboard.controller.js`) 2026-08-16 — tiles were vanishing for End Users with no tickets yet / when the backend request failed, instead of showing `0`.
 
 ## Local dev
 
@@ -43,6 +52,12 @@ Internal IT service management app for **ccentrik**, an SAP services company. Bu
 - **`cds deploy` fully rebuilds `Ticket`/`IncidentForm`/`Attachment`/`TicketCounter` from their CSVs** — any dummy ticket data created live via the API (not CSV) gets wiped every time. Re-seed after deploying (there's an established seed script pattern used this session — recreate tickets via API calls as `virat`/`dev`, then PATCH priority/team/assignment as `sachin`/`aayush`).
 - Mocked auth users (`package.json`): `sachin`/`aayush`/`virat` are the original three (ServiceGroup/Consultant/EndUser). `sarthak`/`jatin`/`punit`/`dev` were added later (see below).
 - Production profile uses HANA (`@cap-js/hana`) + XSUAA auth + an approuter (`app/router/`) for the login redirect — see `mta.yaml`.
+
+### Connecting to real HANA (hybrid profile)
+
+- Plain `npm start` / `cds watch` **always** uses local SQLite (`[development]` override in `package.json`) — never HANA, regardless of whether the HANA instance itself is up. To actually hit HANA locally, run `cds watch --profile hybrid` (or `cds bind --exec -- cds watch`).
+- `.cdsrc-private.json` (gitignored, per-machine) holds the `[hybrid]` binding: CF org `1383a27ftrial`, space `dev`, instance `ITSM-db`, key `ITSM-db-key`. Each teammate needs their own — don't redo `cds bind --to` unless it's genuinely missing on that machine.
+- **Symptom "HANA is running but no data comes through", or `cds bind --exec` failing with `Command failed: cf "oauth-token" ... token expired`** — this is a stale local CF CLI session, not a schema/deploy problem. Fix: `cf login -a https://api.cf.us10-001.hana.ondemand.com` (add `--sso` if it's prompted), reselect org `1383a27ftrial` / space `dev`, then retry. Confirmed this was the actual cause 2026-08-16 — after re-login, `cds bind --exec` resolved fine and a live query returned 67 real tickets from HANA.
 
 ## Working with a teammate on the same repo
 

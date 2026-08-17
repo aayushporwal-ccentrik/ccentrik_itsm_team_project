@@ -10,8 +10,9 @@ service ITSMService {
     // Used to fill the Message Processor dropdown (Service Group picking
     // a Consultant to assign a ticket to).
     entity Users              as projection on master.User;
- 
+
     entity OrganizationSLAs   as projection on master.OrganizationSLA;
+    entity Organizations      as projection on master.Organization;
 
     // Transaction Data
     entity Tickets            as projection on txn.Ticket;
@@ -19,9 +20,16 @@ service ITSMService {
 
     // Tells the frontend which persona the logged-in user is, so the UI
     // can drive its role-based visibility model (see webapp/model/roleConfig.js).
-    function currentUser() returns { persona: String; userName: String; };
-
-    // plain username of the caller.
-    function getCurrUser() returns String;
+    function currentUser() returns {
+        persona: String;
+        userName: String;
+        theme: {
+            themeType: String;
+            themeScope: String;
+            primaryColor: String;
+            secondaryColor: String;
+            logo: String;
+        };
+    };
 
 }

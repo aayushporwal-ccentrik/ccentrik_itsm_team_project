@@ -1,0 +1,5 @@
+ID,code,name,isActive,themeType,themeScope,primaryColor,secondaryColor,gradientDirection,logo
+d1a00001-0000-4000-8000-000000000001,MERIDIAN,Meridian Retail Group,true,SOLID,HEADER,#2a78d6,,TOP_BOTTOM,
+d1a00001-0000-4000-8000-000000000002,SOLSTICE,Solstice Manufacturing,true,SOLID,HEADER,#eb6834,,TOP_BOTTOM,
+d1a00001-0000-4000-8000-000000000003,HARBORPT,Harbor Point Logistics,true,SOLID,HEADER,#1baf7a,,TOP_BOTTOM,
+d1a00001-0000-4000-8000-000000000004,Hero Moto Corp,Hero Moto Corp,true,SOLID,HEADER,#eda100,,TOP_BOTTOM,

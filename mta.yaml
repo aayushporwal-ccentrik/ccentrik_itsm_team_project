@@ -26,6 +26,7 @@ modules:
     requires:
       - name: ITSM-auth
       - name: ITSM-postgres
+      - name: ITSM-db
 
   - name: ITSM-approuter
     type: approuter.nodejs
@@ -51,6 +52,14 @@ modules:
     requires:
       - name: ITSM-postgres
 
+  - name: ITSM-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    requires:
+      - name: ITSM-db
+
 resources:
   - name: ITSM-auth
     type: org.cloudfoundry.managed-service
@@ -70,3 +79,8 @@ resources:
     parameters:
       service: postgresql-db
       service-plan: development
+  - name: ITSM-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared

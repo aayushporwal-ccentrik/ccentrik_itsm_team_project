@@ -1,6 +1,20 @@
 html, body { height: 100%; margin: 0; background: #eef2ff; }
 .appBg { background: #eef2ff; padding: 12px; }
 
+/* Org theme scope = BACKGROUND: the whole canvas becomes the org's
+   solid/gradient fill (top to bottom), and the header blends into it
+   instead of sitting in its own separate box. Cards/tiles/tables are
+   untouched here — .sectionCard/.tablePane/.kpiTile etc. all keep their
+   own explicit white background below, so content stays readable no
+   matter what the page-level color is. */
+html[data-theme-scope="background"] .appBg {
+  background: var(--brand-fill, #eef2ff) !important;
+}
+html[data-theme-scope="background"] .appHeader {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .sectionCard {
   background:#fff; border-radius: 14px; padding: 18px 20px; margin-bottom: 18px;
   box-shadow: 0 1px 2px rgba(0,0,0,.05);
@@ -120,20 +134,20 @@ html, body { height: 100%; margin: 0; background: #eef2ff; }
    target .sapMBtnInner (a real descendant), not "button" (which the class
    already IS, making a descendant selector never match anything). */
 .saveBtn .sapMBtnInner {
-  background:#3b82f6 !important; border-color:#3b82f6 !important;
+  background: var(--brand-fill, #3b82f6) !important; border-color: var(--brand-fill, #3b82f6) !important;
   border-radius: 12px !important;
-  transition: background .15s ease;
+  transition: filter .15s ease;
 }
-.saveBtn .sapMBtnContent, .saveBtn bdi, .saveBtn .sapUiIcon { color:#fff !important; }
-.saveBtn:hover .sapMBtnInner { background:#2563eb !important; border-color:#2563eb !important; }
+.saveBtn .sapMBtnContent, .saveBtn bdi, .saveBtn .sapUiIcon { color: var(--brand-text-on-fill, #fff) !important; }
+.saveBtn:hover .sapMBtnInner { filter: brightness(0.88); }
 
 .submitBtn .sapMBtnInner {
-  background:#2563eb !important; border-color:#2563eb !important;
+  background: var(--brand-fill, #2563eb) !important; border-color: var(--brand-fill, #2563eb) !important;
   border-radius: 12px !important;
-  transition: background .15s ease;
+  transition: filter .15s ease;
 }
-.submitBtn .sapMBtnContent, .submitBtn bdi, .submitBtn .sapUiIcon { color:#fff !important; }
-.submitBtn:hover .sapMBtnInner { background:#1d4ed8 !important; border-color:#1d4ed8 !important; }
+.submitBtn .sapMBtnContent, .submitBtn bdi, .submitBtn .sapUiIcon { color: var(--brand-text-on-fill, #fff) !important; }
+.submitBtn:hover .sapMBtnInner { filter: brightness(0.88); }
 
 /* ---- Attachments: note banner + count/upload row + document table ---- */
 .attachmentsNote { margin-bottom: 12px; border-radius: 8px; }
@@ -169,7 +183,7 @@ html, body { height: 100%; margin: 0; background: #eef2ff; }
 }
 .appHeader {
   margin-top: 14px !important;
-  background: #021a86 !important;
+  background: var(--brand-fill, #021a86) !important;
   border-radius: 12px;
   padding: 4px 10px;
   box-shadow: 0 1px 3px rgba(0,0,0,.12);
@@ -179,7 +193,7 @@ html, body { height: 100%; margin: 0; background: #eef2ff; }
    a 2-line title+subtitle stack then simply pokes out above/below the
    navy box instead of growing it. Force every level to size to content. */
 .appHeaderTitle {
-  color: #fff !important;
+  color: var(--brand-text-on-fill, #fff) !important;
   font-weight: 700 !important;
 }
 /* Subtitle for Main/detail pages lives in normal page flow just below the
@@ -198,11 +212,28 @@ html, body { height: 100%; margin: 0; background: #eef2ff; }
   margin: 1px 0 0;
 }
 
-/* navy header pe Reset / View All buttons ko white karo (warna navy-on-navy = invisible) */
+/* Whole-app-background scope: these sit directly on the themed canvas, not
+   inside a white .sectionCard — their normal dark-on-light colors above
+   turn near-invisible on a dark org color. Everything already inside a
+   card keeps its usual styling untouched; cards stay white in this mode
+   (see the .appBg override earlier in this file), so their own text was
+   never affected. sapMITBText/sapMITBSelected are IconTabHeader's own
+   fixed UI5 class names (confirmed against the actual control source, not
+   guessed), for the "General & Category / Processing & Dates / ..." tabs.
+   --brand-text-on-fill (white or dark, computed in Component.js from the
+   org color's own brightness) — not a flat white — so a light org color
+   still gets readable dark text here instead of white-on-white. */
+html[data-theme-scope="background"] .pageTicketId { color: var(--brand-text-on-fill, #fff) !important; }
+html[data-theme-scope="background"] .pageSubtitle { color: var(--brand-text-on-fill, #fff) !important; opacity: .78; }
+html[data-theme-scope="background"] .sapMITBText { color: var(--brand-text-on-fill, #fff) !important; opacity: .85; }
+html[data-theme-scope="background"] .sapMITBSelected .sapMITBText { color: var(--brand-text-on-fill, #fff) !important; opacity: 1; }
+
+/* navy header pe Reset / View All buttons ko theme ke hisaab se karo
+   (warna same-color-on-same-color = invisible) — see --brand-text-on-fill above. */
 .appHeader .sapMBtnContent,
 .appHeader .sapUiIcon,
 .appHeader bdi {
-  color: #fff !important;
+  color: var(--brand-text-on-fill, #fff) !important;
 }
 .appHeader .sapMBtn .sapMBtnInner {
   border-color: rgba(255,255,255,.35) !important;
@@ -226,7 +257,11 @@ html, body { height: 100%; margin: 0; background: #eef2ff; }
 .headerActionBtn .sapMBtnContent,
 .headerActionBtn .sapUiIcon,
 .headerActionBtn bdi {
-  color: #021a86 !important;
+  /* This pill's own background stays fixed white regardless of theme (see
+     .sapMBtnInner above) — brand-accent-on-white falls back to the app's
+     navy instead of the raw org color when that color is too light to read
+     on white (Component.js decides this the same way as --brand-text-on-fill). */
+  color: var(--brand-accent-on-white, #021a86) !important;
   font-size: 12px !important;
 }
 .headerActionBtn:hover .sapMBtnInner {
@@ -543,3 +578,238 @@ html, body { height: 100%; margin: 0; background: #eef2ff; }
   border: 1px solid #e5e7eb;
   border-radius: 8px;
 }
+
+.colorPickRow { gap: 6px; align-items: center; }
+.colorPickBtn .sapMBtnInner { min-width: 2.25rem !important; padding: 0 !important; }
+.logoUploadRow { gap: 10px; }
+.logoPreviewThumb { max-width: 120px; object-fit: contain; }
+.fieldHint { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+
+/* ---- Logo crop dialog: drag-to-pan + zoom over a fixed-size canvas frame
+   (see OrganizationDetail.controller.js's crop handlers). ---- */
+.logoCropFrame {
+  display: inline-block;
+  line-height: 0;
+  border: 2px dashed #c7d2fe;
+  border-radius: 8px;
+  overflow: hidden;
+}
+#logoCropCanvas { display: block; background: #f8f9fc; cursor: move; touch-action: none; }
+
+/* ---- Organization Theme: live preview — a browser-chrome mockup (traffic
+   lights + fake address bar) wrapping the real dashboard header + a few
+   dummy tickets (see formatThemePreviewHtml), not just a color patch.
+   Header/button/glow colors are inline (theme-driven); everything else
+   here is fixed layout. Re-plays its settle-in animation on every change
+   because the whole block is fresh DOM each time (bound formatter), which
+   doubles as a "yes, this just updated" cue. */
+@keyframes themePreviewSettle {
+  from { opacity: 0; transform: translateY(4px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.themePreviewWindow {
+  width: 100%;
+  max-width: 860px;
+  border-radius: 14px;
+  overflow: hidden;
+  margin: 8px 0 4px;
+  background: #fff;
+  animation: themePreviewSettle .25s ease-out;
+}
+.themePreviewChrome {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  background: rgba(241,244,255,.9);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(15,23,42,.06);
+}
+.themePreviewDots { display: flex; gap: 5px; flex: none; }
+.themePreviewDot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.themePreviewDotRed { background: #ff5f57; }
+.themePreviewDotYellow { background: #febc2e; }
+.themePreviewDotGreen { background: #28c840; }
+.themePreviewUrlBar {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 10.5px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.themePreviewLiveBadge {
+  flex: none;
+  display: flex;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 2px 8px 2px 6px;
+  border-radius: 999px;
+}
+@keyframes themePreviewPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .35; transform: scale(.7); }
+}
+.themePreviewLiveDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #22c55e;
+  display: inline-block;
+  margin-right: 4px;
+  animation: themePreviewPulse 1.6s ease-in-out infinite;
+}
+.themePreviewHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+}
+.themePreviewLogo { height: 24px; width: auto; }
+.themePreviewTitle { color: #fff; font-weight: 700; font-size: 14px; flex: 1; }
+.themePreviewBtn {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+}
+
+/* The page canvas behind everything — .appBg's usual light blue in HEADER
+   scope, the org's own fill in BACKGROUND scope (set inline, see
+   formatThemePreviewHtml). Tiles/table/chart below are always plain white
+   cards regardless, same as the real GenericTile/.tablePane/.chartPane. */
+.themePreviewContent { padding: 12px 16px 16px; }
+
+.themePreviewTiles {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.themePreviewTile {
+  flex: 1 1 110px;
+  min-width: 100px;
+  background: #fff;
+  border-left: 3px solid transparent;
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.themePreviewTileTop { display: flex; align-items: center; justify-content: space-between; }
+.themePreviewTileIcon { font-size: 13px; font-weight: 700; }
+.themePreviewTileValue { font-size: 17px; font-weight: 800; color: #1e2a5e; }
+.themePreviewTileLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.themePreviewSplit { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+.themePreviewTablePane {
+  flex: 1 1 480px;
+  min-width: 0;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 10px 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.themePreviewTHead {
+  display: flex;
+  gap: 6px;
+  padding: 4px 4px 8px;
+  border-bottom: 2px solid #f1f4ff;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1e2a5e;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+.themePreviewTRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 7px 4px;
+  border-bottom: 1px solid #f1f4ff;
+  font-size: 12px;
+}
+.themePreviewTRow:last-child { border-bottom: none; }
+.themePreviewTCol { min-width: 0; }
+.themePreviewTColNo { flex: 0 0 76px; font-weight: 700; color: #1e2a5e; }
+.themePreviewTColDesc {
+  flex: 1 1 auto;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.themePreviewTColStatus, .themePreviewTColPriority { flex: 0 0 84px; }
+.themePreviewTRow .themePreviewTColStatus {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  width: fit-content;
+}
+.themePreviewBadgeNew { background: #dbeafe; color: #1d4ed8; }
+.themePreviewBadgeProgress { background: #fef3c7; color: #b45309; }
+.themePreviewBadgeClosed { background: #dcfce7; color: #15803d; }
+
+.themePreviewChartPane {
+  flex: 1 1 200px;
+  min-width: 180px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.themePreviewChartTitle {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #374151;
+  background: #e5e7eb;
+  padding: 3px 9px;
+  border-radius: 999px;
+  width: fit-content;
+  margin-bottom: 10px;
+}
+.themePreviewDonut {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  position: relative;
+}
+.themePreviewDonut::after {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  background: #fff;
+}
+.themePreviewCatRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  padding: 3px 0;
+}
+.themePreviewCatDot { width: 8px; height: 8px; border-radius: 50%; flex: none; }

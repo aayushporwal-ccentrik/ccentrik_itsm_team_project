@@ -1,9 +1,10 @@
 sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
-  "itsm/ui/model/formatter",
-  "itsm/ui/model/lookupValues"
-], function (Controller, JSONModel, formatter, fetchLookup) {
+  "sap/ui/model/Filter",
+  "sap/ui/model/FilterOperator",
+  "itsm/ui/model/formatter"
+], function (Controller, JSONModel, Filter, FilterOperator, formatter) {
   "use strict";
 
   var HIGH_PRIORITY_CODES = ["HIGH", "CRITICAL"];
@@ -58,16 +59,19 @@ sap.ui.define([
       var oModel = this.getOwnerComponent().getModel();
 
       Promise.all([
-        oModel.bindList("/Tickets", undefined, undefined, undefined, {
+        // Same rule as Dashboard.controller.js: Service Group only sees a
+        // ticket once it's actually been submitted — a Draft is still an
+        // End User's unsubmitted work-in-progress form.
+        oModel.bindList("/Tickets", undefined, undefined, new Filter("status", FilterOperator.NE, "DRAFT"), {
           $select: "ticketID,ticketNumber,status,priority,ticketType,messageProcessor,supportTeam,dueAt,firstResponseAt,completedAt,createdAt,assignedAt,reportedBy",
           $expand: "incidentForm($select=category1)"
         }).requestContexts(),
         oModel.bindList("/Users", undefined, undefined, undefined, { $select: "userId,client" }).requestContexts(),
-        fetchLookup(oModel, "CLIENT")
+        oModel.bindList("/Organizations", undefined, undefined, undefined, { $select: "code,name" }).requestContexts()
       ]).then(function (aResults) {
         var aTickets = aResults[0].map(function (oCtx) { return oCtx.getObject(); });
         var aUsers = aResults[1].map(function (oCtx) { return oCtx.getObject(); });
-        var aClientLookup = aResults[2];
+        var aClientLookup = aResults[2].map(function (oCtx) { return oCtx.getObject(); });
 
         var mClientByUser = {};
         aUsers.forEach(function (u) { mClientByUser[u.userId] = u.client; });

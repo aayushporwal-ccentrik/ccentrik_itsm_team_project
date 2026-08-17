@@ -46,6 +46,16 @@ sap.ui.define([
       };
       this._aTileKeys = this._loadTileKeyPref();
 
+      // Seeded up front (all zero counts) so the tile row always has a
+      // model to bind to. Without this, the row stays empty — not showing
+      // zeros, but literally rendering nothing — until _loadTiles' async
+      // request resolves, and permanently so if it ever errors.
+      this.getView().setModel(new JSONModel({
+        tiles: this._buildTiles([]),
+        categoryData: [],
+        tableTitle: ""
+      }), "dash");
+
       this.getOwnerComponent().getRouter().getRoute("dashboard").attachPatternMatched(this._onShow, this);
     },
 
@@ -120,7 +130,14 @@ sap.ui.define([
       fetchLookup(oModel, "PRIORITY").then(function (aRows) {
         oFiltersModel.setProperty("/priorities", [{ code: "", name: "All Priorities" }].concat(aRows));
       });
-      fetchLookup(oModel, "CLIENT").then(function (aRows) {
+      // Clients now come from the Organizations admin panel, not a generic
+      // lookup — one read, reused below for both the filter and the name map.
+      var pOrgOptions = oModel.bindList("/Organizations", undefined, undefined,
+        new Filter("isActive", FilterOperator.EQ, true), { $orderby: "name" }
+      ).requestContexts().then(function (aContexts) {
+        return aContexts.map(function (oCtx) { var o = oCtx.getObject(); return { code: o.code, name: o.name }; });
+      });
+      pOrgOptions.then(function (aRows) {
         oFiltersModel.setProperty("/clients", [{ code: "", name: "All Clients" }].concat(aRows));
       });
 
@@ -130,7 +147,7 @@ sap.ui.define([
       fetchLookup(oModel, "STATUS").then(function (aRows) { that._mStatusName = that._toNameMap(aRows); });
       fetchLookup(oModel, "PRIORITY").then(function (aRows) { that._mPriorityName = that._toNameMap(aRows); });
       fetchLookup(oModel, "CATEGORY1").then(function (aRows) { that._mCategoryName = that._toNameMap(aRows); });
-      fetchLookup(oModel, "CLIENT").then(function (aRows) { that._mClientName = that._toNameMap(aRows); });
+      pOrgOptions.then(function (aRows) { that._mClientName = that._toNameMap(aRows); });
     },
 
     _toNameMap: function (aRows) {
@@ -209,6 +226,17 @@ sap.ui.define([
           that._sPendingTitle = "";
           that._syncTileClasses();
           that._updateAssigneeOptions(aTickets);
+        })
+        .catch(function () {
+          // Request failed (e.g. backend/DB not reachable) — fall back to
+          // zeroed tiles instead of leaving the row permanently empty.
+          that.getView().setModel(new JSONModel({
+            tiles: that._buildTiles([]),
+            categoryData: [],
+            tableTitle: that._sPendingTitle || "All Incidents"
+          }), "dash");
+          that._sPendingTitle = "";
+          that._syncTileClasses();
         });
     },
 
@@ -314,6 +342,11 @@ sap.ui.define([
 
       if (this._isOwnTicketsOnly()) {
         aFilters.push(new Filter("reportedBy", FilterOperator.EQ, this.getOwnerComponent().getModel("role").getProperty("/userName")));
+      } else {
+        // Service Group sees everyone's tickets, but a Draft is still an
+        // End User's unsubmitted work-in-progress form — not theirs to see
+        // or triage until it's actually been submitted (status != DRAFT).
+        aFilters.push(new Filter("status", FilterOperator.NE, "DRAFT"));
       }
       if (bIncludeStatus && this._mFilters.status) {
         aFilters.push(new Filter("status", FilterOperator.EQ, this._mFilters.status));

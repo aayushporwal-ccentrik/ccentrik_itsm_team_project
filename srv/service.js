@@ -1,11 +1,10 @@
 const cds = require("@sap/cds");
 const { SELECT, INSERT, UPDATE } = cds.ql;
 
-const { TicketCounter } = cds.entities("itsm.master");
+const { TicketCounter, User, Organization } = cds.entities("itsm.master");
 const { IncidentForm } = cds.entities("itsm.transaction");
 
-// Short code shown in the ticket number, e.g. "INC-00001". Falls back to
-// the type's own first 3 letters if it's not in this list.
+// Prefix used in the ticket number, e.g. "INC-00001".
 const PREFIX_BY_TYPE = {
   INCIDENT: "INC",
   SERVICE_REQUEST: "SRV",
@@ -17,29 +16,39 @@ module.exports = cds.service.impl(function () {
   "use strict";
 
   this.on("currentUser", onCurrentUser);
-  this.on("getCurrUser", onGetCurrUser);
   this.before("CREATE", "Tickets", onBeforeCreateTicket);
   this.before("UPDATE", "Tickets", onBeforeUpdateTicket);
+  this.before("UPDATE", "Organizations", onBeforeUpdateOrganization);
 });
 
-// Tells the frontend which persona the logged-in user is (see
-// webapp/model/roleConfig.js) — CAP has no built-in "whoami" endpoint.
+// Tells the frontend which persona/theme the logged-in user has.
 async function onCurrentUser(req) {
   var sPersona = "END_USER";
-  if (req.user.is("Consultant")) { sPersona = "CONSULTANT"; }
+  if (req.user.is("Admin")) { sPersona = "ADMIN"; }
+  else if (req.user.is("Consultant")) { sPersona = "CONSULTANT"; }
   else if (req.user.is("ServiceGroup")) { sPersona = "SERVICE_GROUP"; }
 
-  return { persona: sPersona, userName: req.user.id };
+  return { persona: sPersona, userName: req.user.id, theme: await resolveUserTheme(req.user.id) };
 }
 
-// Manager-requested: plain username, no persona wrapper.
-async function onGetCurrUser(req) {
-  return req.user.id;
+async function resolveUserTheme(sUserId) {
+  const oUser = await SELECT.one.from(User).where({ userId: sUserId });
+  if (!oUser || !oUser.client) { return null; }
+
+  const oOrg = await SELECT.one.from(Organization).where({ code: oUser.client, isActive: true });
+  if (!oOrg) { return null; }
+
+  return {
+    themeType: oOrg.themeType,
+    themeScope: oOrg.themeScope,
+    primaryColor: oOrg.primaryColor,
+    secondaryColor: oOrg.secondaryColor,
+    logo: oOrg.logo
+  };
 }
 
-// Assigns a ticket its key (ticketID) and its human-readable number
-// (ticketNumber) the moment it's first saved, and fills in the fields
-// that should always come from the server, not the client.
+// Generates ticketID/ticketNumber and sets the fields that must come
+// from the server, not the client.
 async function onBeforeCreateTicket(req) {
   const ticket = req.data;
   const identifiers = await generateTicketIdentifiers(ticket.ticketType);
@@ -49,14 +58,9 @@ async function onBeforeCreateTicket(req) {
 
   ticket.status = ticket.status || "DRAFT";
   ticket.priority = ticket.priority || "MEDIUM";
-
-  // The server decides who reported the ticket — never trust the client for this.
   ticket.reportedBy = req.user.id;
 }
 
-// Two timestamps the server sets on its own, not the client:
-// - assignedAt: the moment someone is put in Message Processor.
-// - completedAt: the moment the ticket is moved to Closed.
 async function onBeforeUpdateTicket(req) {
   if (req.data.messageProcessor) {
     req.data.assignedAt = new Date().toISOString();
@@ -65,11 +69,9 @@ async function onBeforeUpdateTicket(req) {
     req.data.completedAt = new Date().toISOString();
   }
 
-  // The form edits incidentForm fields via flat paths (e.g. "incidentForm/system"),
-  // never through its own bound entity, so the client's PATCH nests them
-  // inside the ticket payload without the child row's own key. The generic
-  // handler can't address that and silently drops it, so it's applied here
-  // as its own update instead, matched by ticketID (one form per ticket).
+  // incidentForm fields come in nested under the ticket PATCH; CAP's
+  // generic handler can't route that to the child row, so it's applied
+  // here as its own update.
   if (req.data.incidentForm) {
     const oFormData = req.data.incidentForm;
     delete oFormData.ID;
@@ -80,6 +82,18 @@ async function onBeforeUpdateTicket(req) {
       const [oKey] = req.params;
       await UPDATE(IncidentForm).set(oFormData).where({ ticketID: oKey.ticketID });
     }
+  }
+}
+
+// User.client is matched against Organization.code by plain string, so
+// renaming a code has to carry existing users along with it.
+async function onBeforeUpdateOrganization(req) {
+  if (!req.data.code) { return; }
+
+  const [oKey] = req.params;
+  const oOrg = await SELECT.one.from(Organization).where({ ID: oKey.ID });
+  if (oOrg && oOrg.code && oOrg.code !== req.data.code) {
+    await UPDATE(User).set({ client: req.data.code }).where({ client: oOrg.code });
   }
 }
 
