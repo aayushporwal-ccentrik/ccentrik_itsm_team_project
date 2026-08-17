@@ -1,0 +1,10 @@
+{
+  "name": "webapp",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "ui5 build --clean-dest --dest dist"
+  },
+  "devDependencies": {
+    "@ui5/cli": "^4"
+  }
+}

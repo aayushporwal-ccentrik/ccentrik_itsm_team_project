@@ -13,7 +13,26 @@
         }
       }
     },
-    "applicationVersion": { "version": "1.0.0" }
+    "applicationVersion": { "version": "1.0.0" },
+    "crossNavigation": {
+      "inbounds": {
+        "itsm-manage": {
+          "semanticObject": "ITSMTicket",
+          "action": "manage",
+          "title": "ITSM Service Desk",
+          "subTitle": "Manage IT service tickets",
+          "icon": "sap-icon://it-instance",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
+        }
+      }
+    }
+  },
+  "sap.cloud": {
+    "public": true,
+    "service": "ITSM.service"
   },
   "sap.ui": {
     "technology": "UI5",

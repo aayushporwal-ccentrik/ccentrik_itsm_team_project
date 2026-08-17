@@ -77,14 +77,18 @@ sap.ui.define([
       this._refreshUiModel("DRAFT");
     },
 
-    // One request for the ticket, its incident form and its attachments —
-    // the composition is already in the schema, so $expand gets everything
-    // the form needs in one round trip instead of a separate attachments call.
     _onDetail: function (oEvent) {
       this._bCreateMode = false;
       this._bEditing = false;
+      this._loadTicket(oEvent.getParameter("arguments").id);
+    },
 
-      var sId = oEvent.getParameter("arguments").id;
+    // One request for the ticket, its incident form and its attachments —
+    // the composition is already in the schema, so $expand gets everything
+    // the form needs in one round trip instead of a separate attachments call.
+    // Also used after a lifecycle action (Submit/Assign/Resolve/Close)
+    // completes, to pick up the new status/pendingWith it set server-side.
+    _loadTicket: function (sId) {
       var oContext = this.getView().getModel().bindContext(
         "/Tickets(ticketID='" + sId + "')",
         undefined,
@@ -94,7 +98,7 @@ sap.ui.define([
       this.getView().setBindingContext(oContext);
 
       var that = this;
-      oContext.requestObject().then(function (oTicket) {
+      return oContext.requestObject().then(function (oTicket) {
         that._refreshUiModel(oTicket.status);
         that._setAttachmentsModel(oTicket.attachments, oContext);
       });
@@ -132,9 +136,13 @@ sap.ui.define([
         if (bWasCreating) {
           that._oPendingCreateContext = null;
           var sNumber = oContext.getProperty("ticketNumber");
+          // Stay on this same context (still in create mode) instead of
+          // navigating to the detail page — that would flip _bCreateMode
+          // off and lock every field, even though the user might still
+          // want to keep filling the form in. Only Submit should lock it.
           MessageBox.information("Ticket " + sNumber + " has been created and saved as Draft.", {
             onClose: function () {
-              that.getOwnerComponent().getRouter().navTo("detail", { id: oContext.getProperty("ticketID") }, true);
+              that._navHome();
             }
           });
         } else {
@@ -153,44 +161,86 @@ sap.ui.define([
     },
 
     // Moves the ticket straight to New — either a brand new ticket that
-    // was never saved as Draft, or an existing Draft opened later.
+    // was never saved as Draft, or an existing Draft opened later. A brand
+    // new ticket has to be created first (it has no ticketID yet); an
+    // existing Draft is already saved, so that step is skipped. Either way
+    // it ends at the same place: ticketAction("SUBMIT") does the actual
+    // status change and workflow log (see srv/service.js).
     onSubmit: function () {
       var that = this;
-      var oViewContext = this.getView().getBindingContext();
+      var oContext = this.getView().getBindingContext();
       var bWasCreating = this._bCreateMode;
 
-      // An existing ticket is read via _onDetail with $expand=incidentForm,
-      // attachments (one round trip for the whole form) — the v4 model
-      // carries that same $expand into any PATCH built from that context,
-      // asking the server to return incidentForm re-expanded in the write
-      // response. IncidentForm isn't separately exposed as its own entity
-      // set (db/schema.cds / srv/service.cds), so CAP rejects the whole
-      // write with "Entity ITSMService.IncidentForm is not explicitly
-      // exposed as part of the service" — even for a plain status change
-      // with no incidentForm data involved. A second, expand-free context
-      // bound to the same key sidesteps it for the write; it shares the
-      // same underlying cache entry as the view's own context, so the
-      // change still shows up on screen.
-      var oContext = bWasCreating
-        ? oViewContext
-        : this.getView().getModel().bindContext(oViewContext.getPath()).getBoundContext();
-
-      oContext.setProperty("status", "NEW");
-
-      var pSaved = this.getView().getModel().submitBatch(UPDATE_GROUP);
+      var pReady = this.getView().getModel().submitBatch(UPDATE_GROUP);
       if (bWasCreating) {
-        pSaved = pSaved.then(function () { return oContext.created(); });
+        pReady = pReady.then(function () { return oContext.created(); });
       }
 
-      pSaved.then(function () {
+      pReady.then(function () {
         if (bWasCreating) { that._oPendingCreateContext = null; }
+        return that._invokeTicketAction(oContext.getProperty("ticketID"), "SUBMIT");
+      }).then(function () {
         MessageBox.success("Your ticket has been submitted.", {
           onClose: function () { that._navHome(); }
         });
       }).catch(function (oError) {
         Log.error("Ticket submit failed", oError);
-        MessageBox.error("Could not submit the ticket. Please check the required fields.");
+        MessageBox.error(that._actionErrorText(oError) || "Could not submit the ticket. Please check the required fields.");
       });
+    },
+
+    // Service Group assigning a Consultant, Consultant marking their work
+    // resolved, End User closing a resolved ticket — same shape as Submit
+    // above: save whatever's pending (e.g. the Consultant just picked),
+    // then run that one ticketAction. Nothing here re-implements the
+    // status/workflow-log logic — that's all in srv/service.js.
+    onAssign: function () {
+      this._runLifecycleAction("ASSIGN", "Could not assign the ticket.");
+    },
+
+    onResolve: function () {
+      this._runLifecycleAction("RESOLVED", "Could not mark the ticket resolved.");
+    },
+
+    onClose: function () {
+      this._runLifecycleAction("CLOSED", "Could not close the ticket.");
+    },
+
+    _runLifecycleAction: function (sAction, sErrorFallback) {
+      var that = this;
+      var sTicketId = this.getView().getBindingContext().getProperty("ticketID");
+
+      this.getView().getModel().submitBatch(UPDATE_GROUP).then(function () {
+        that._bEditing = false;
+        return that._invokeTicketAction(sTicketId, sAction);
+      }).then(function (sMessage) {
+        MessageToast.show(sMessage);
+      }).catch(function (oError) {
+        Log.error("ticketAction " + sAction + " failed", oError);
+        MessageBox.error(that._actionErrorText(oError) || sErrorFallback);
+      });
+    },
+
+    // Calls the ticketAction OData action, then reloads the ticket so the
+    // form picks up whatever it changed (status, subStatus, pendingWith).
+    _invokeTicketAction: function (sTicketId, sAction) {
+      var that = this;
+      var oOperation = this.getView().getModel().bindContext("/ticketAction(...)");
+      oOperation.setParameter("ticketID", sTicketId);
+      oOperation.setParameter("action", sAction);
+
+      return oOperation.execute().then(function () {
+        return oOperation.getBoundContext().getProperty("value");
+      }).then(function (sMessage) {
+        return that._loadTicket(sTicketId).then(function () { return sMessage; });
+      });
+    },
+
+    // ticketAction sends back a plain, readable message (e.g. "No
+    // Consultant selected for this ticket.") — show that instead of a
+    // generic error when we have it.
+    _actionErrorText: function (oError) {
+      return oError && oError.message;
     },
 
     onDelete: function () {

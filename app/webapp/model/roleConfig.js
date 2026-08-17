@@ -172,6 +172,13 @@ sap.ui.define([], function () {
       saveLabel: "Save",
       saveEnabled: true,
 
+      // The four lifecycle actions (see srv/service.js ticketAction) —
+      // each shown only to the persona who owns that step, only once the
+      // ticket is actually at that step.
+      showAssign: sPersona === "SERVICE_GROUP" && bEditing && sStatus === "NEW",
+      showResolve: sPersona === "CONSULTANT" && bEditing && sStatus === "ASSIGNED",
+      showClose: sPersona === "END_USER" && sStatus === "RESOLVED",
+
       subtitle: bCreate ? "Create a new incident ticket" : ""
     };
   };

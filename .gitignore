@@ -3,6 +3,7 @@ target/
 _out/
 gen/
 app/router/webapp/
+app/webapp/dist/
 
 .cdsrc-private.json
 default-*.json

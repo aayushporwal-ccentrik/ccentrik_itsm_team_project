@@ -28,6 +28,9 @@
         <Button text="Delete" type="Negative" class="sapUiTinyMarginEnd" visible="{ui>/showDelete}" press=".onDelete"/>
         <Button text="Edit" class="saveBtn sapUiTinyMarginEnd" visible="{ui>/showEdit}" press=".onEdit"/>
         <Button text="{ui>/saveLabel}" class="saveBtn sapUiTinyMarginEnd" visible="{ui>/showSave}" enabled="{ui>/saveEnabled}" press=".onSave"/>
+        <Button text="Assign" class="submitBtn sapUiTinyMarginEnd" visible="{ui>/showAssign}" press=".onAssign"/>
+        <Button text="Mark Resolved" class="submitBtn sapUiTinyMarginEnd" visible="{ui>/showResolve}" press=".onResolve"/>
+        <Button text="Close Ticket" class="submitBtn sapUiTinyMarginEnd" visible="{ui>/showClose}" press=".onClose"/>
         <Button text="Submit" class="submitBtn" visible="{ui>/showSubmit}" press=".onSubmit"/>
       </contentRight>
     </Bar>
@@ -122,14 +125,6 @@
                 <Label text="Category 4"/>
                 <Select selectedKey="{incidentForm/category4}" enabled="{ui>/editable/category4}" forceSelection="false" width="100%"
                         items="{ path: '/LookupValues', parameters: { $filter : &quot;lookupType eq 'CATEGORY4' and isActive eq true&quot;, $orderby: 'sequence' } }">
-                  <core:Item key="{code}" text="{name}"/>
-                </Select>
-              </VBox>
-
-              <VBox class="formField" visible="{ui>/visibility/processing}">
-                <Label text="Solution Category"/>
-                <Select selectedKey="{incidentForm/solutionCategory}" enabled="{ui>/editable/solutionCategory}" width="100%"
-                        items="{ path: '/LookupValues', parameters: { $filter : &quot;lookupType eq 'SOLUTION' and isActive eq true&quot;, $orderby: 'sequence' } }">
                   <core:Item key="{code}" text="{name}"/>
                 </Select>
               </VBox>

@@ -4,6 +4,7 @@ version: 1.0.0
 description: "A simple CAP project."
 parameters:
   enable-parallel-deployments: true
+  deploy_mode: html5-repo
 build-parameters:
   before-all:
     - builder: custom
@@ -27,6 +28,7 @@ modules:
     requires:
       - name: ITSM-auth
       - name: ITSM-db
+      - name: ITSM-destination
 
   - name: ITSM-approuter
     type: approuter.nodejs
@@ -43,6 +45,8 @@ modules:
           url: ~{srv-url}
           forwardAuthToken: true
       - name: ITSM-auth
+      - name: ITSM-destination
+      - name: ITSM-html5-runtime
 
   - name: ITSM-db-deployer
     type: hdb
@@ -51,6 +55,79 @@ modules:
       buildpack: nodejs_buildpack
     requires:
       - name: ITSM-db
+
+  - name: ITSM-app-deployer
+    type: com.sap.application.content
+    path: gen
+    build-parameters:
+      build-result: app/
+      requires:
+        - name: ITSMwebapp
+          artifacts:
+            - webapp.zip
+          target-path: app/
+    requires:
+      - name: ITSM-auth
+      - name: srv-api
+      - name: ITSM-html5-repo-host
+        parameters:
+          content-target: true
+          config:
+            HTML5Runtime_enabled: true
+    parameters:
+      config:
+        destinations:
+          - Name: srv-api
+            URL: ~{srv-api/srv-url}
+            Authentication: NoAuthentication
+            Type: HTTP
+            ProxyType: Internet
+            HTML5.ForwardAuthToken: true
+            HTML5.DynamicDestination: true
+
+  - name: ITSMwebapp
+    type: html5
+    path: app/webapp
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms:
+        []
+
+  - name: ITSM-destinations
+    type: com.sap.application.content
+    requires:
+      - name: ITSM-auth
+        parameters:
+          service-key:
+            name: ITSM-auth-key
+      - name: ITSM-html5-repo-host
+        parameters:
+          service-key:
+            name: ITSM-html5-repo-host-key
+      - name: srv-api
+      - name: ITSM-destination
+        parameters:
+          content-target: true
+    build-parameters:
+      no-source: true
+    parameters:
+      content:
+        instance:
+          existing_destinations_policy: update
+          destinations:
+            - Name: ITSM-html5-repository
+              ServiceInstanceName: ITSM-html5-repo-host
+              ServiceKeyName: ITSM-html5-repo-host-key
+              sap.cloud.service: ITSM.service
+            - Name: ITSM-auth
+              Authentication: OAuth2UserTokenExchange
+              ServiceInstanceName: ITSM-auth
+              ServiceKeyName: ITSM-auth-key
+              sap.cloud.service: ITSM.service
 
 resources:
   - name: ITSM-auth
@@ -67,3 +144,21 @@ resources:
     parameters:
       service: hana
       service-plan: hdi-shared
+  - name: ITSM-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+    requires:
+      - name: srv-api
+
+  - name: ITSM-html5-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+  - name: ITSM-html5-runtime
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-runtime

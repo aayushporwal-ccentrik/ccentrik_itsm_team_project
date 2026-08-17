@@ -7,54 +7,22 @@ service ITSMService {
     // Master Data
     entity LookupValues       as projection on master.LookupValue;
 
-    // Used to fill the Message Processor dropdown (Service Group picking
-    // a Consultant to assign a ticket to).
+    // Used by the Message Processor dropdown, the client-filter join, and
+    // to resolve a logged-in user's org/theme.
     entity Users              as projection on master.User;
 
-    entity OrganizationSLAs   as projection on master.OrganizationSLA;
+    // Admin panel: organizations list + per-org theme/logo.
     entity Organizations      as projection on master.Organization;
 
     // Transaction Data
-    // Main Tickets entity — role-based access control
-    @restrict: [
-        { grant: 'CREATE',       to: 'EndUser' },
-        { grant: 'READ',         to: 'EndUser' },
-        { grant: 'submitTicket', to: 'EndUser' },
-        { grant: 'READ',         to: 'ServiceGroup' },
-        { grant: 'UPDATE',       to: 'ServiceGroup' },
-        { grant: 'assignTicket', to: 'ServiceGroup' },
-        { grant: 'READ',         to: 'Consultant' },
-        { grant: 'UPDATE',       to: 'Consultant' }
-    ]
-    entity Tickets            as projection on txn.Ticket
-    actions {
-        action submitTicket(ticketID : String) returns Tickets;
-        action assignTicket(messageProcessor : String) returns Tickets;
+    entity Tickets            as projection on txn.Ticket;
+    entity TicketLogs         as projection on txn.TicketLog;
 
-        action ticketAction(ticketID : String, action: String) returns String;
-    };
-    // NEW — Service Group ka worklist: sirf submitted + unassigned tickets
-    // Service Group ka Worklist — sirf submitted + unassigned tickets
-    // (Service Group ka "Inbox Tray" — naye/unassigned tickets dekhne ke liye)
-    @readonly
-    @restrict: [
-        { grant: 'READ', to: 'ServiceGroup' }
-    ]
-    entity ServiceGroupWorklist as projection on txn.Ticket
-        where status = 'SUBMITTED' and messageProcessor is null;
+    action ticketAction(ticketID : String, action: String) returns String;
 
-    // Tells the frontend which persona/theme the logged-in user has, so the UI
-    // can drive its role-based visibility model (see webapp/model/roleConfig.js).
-    function currentUser() returns {
-        persona: String;
-        userName: String;
-        theme: {
-            themeType: String;
-            themeScope: String;
-            primaryColor: String;
-            secondaryColor: String;
-            logo: String;
-        };
-    };
+    // Tells the frontend which persona the logged-in user is and (for an
+    // End User whose org has a theme set) what colors/logo to apply.
+    function currentUser() returns { persona: String; userName: String; theme: { themeType: String; themeScope: String; primaryColor: String; secondaryColor: String; logo: String; }; };
 
 }
+ 
