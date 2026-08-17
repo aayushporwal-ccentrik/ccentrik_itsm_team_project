@@ -2,5 +2,8 @@ ID,userId,name,email,isActive,role,client
 7d88e223-b9d5-41c7-85a3-01f3c7a90f6c,sachin,Sachin,sachin@itsm.example.com,true,SERVICE_GROUP,
 8ff10bb7-4f19-4f1c-85a2-734085981d4e,aayush,Aayush,aayush@itsm.example.com,true,CONSULTANT,
 f5a42c4c-550f-4470-b5c7-9949cd84b0eb,virat,Virat,virat@itsm.example.com,true,END_USER,MERIDIAN
+1988a2af-b5f5-47bd-a24e-6b789961d854,sarthak,Sarthak,sarthak@itsm.example.com,true,SERVICE_GROUP,
+e7655c09-b483-4f71-a588-2ed08b0adc78,jatin,Jatin,jatin@itsm.example.com,true,CONSULTANT,
+1cd1a7e2-6a47-4aab-87ab-bef138a97d06,punit,Punit,punit@itsm.example.com,true,END_USER,
 95a42c4c-550f-4470-b5c7-9949cd84b380,dev,Dev,dev@itsm.example.com,true,END_USER,Hero Moto Corp
 a1b2c3d4-0000-4000-8000-000000000099,admin,Platform Admin,admin@itsm.example.com,true,ADMIN,

@@ -10,6 +10,7 @@ build-parameters:
       commands:
         - npm ci
         - npx cds build --production
+        - cp -r app/webapp app/router/webapp
 modules:
   - name: ITSM-srv
     type: nodejs
@@ -25,7 +26,6 @@ modules:
           srv-url: ${default-url}
     requires:
       - name: ITSM-auth
-      - name: ITSM-postgres
       - name: ITSM-db
 
   - name: ITSM-approuter
@@ -37,20 +37,12 @@ modules:
       memory: 256M
     requires:
       - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api
+          url: ~{srv-url}
+          forwardAuthToken: true
       - name: ITSM-auth
-
-  - name: ITSM-postgres-deployer
-    type: nodejs
-    path: gen/pg
-    parameters:
-      buildpack: nodejs_buildpack
-      no-route: true
-      no-start: true
-      tasks:
-        - name: deploy-to-postgresql
-          command: npm start
-    requires:
-      - name: ITSM-postgres
 
   - name: ITSM-db-deployer
     type: hdb
@@ -70,17 +62,8 @@ resources:
       config:
         xsappname: ITSM-${org}-${space}
         tenant-mode: dedicated
-        oauth2-configuration:
-          credential-types:
-            - "binding-secret"
-            - "x509"
-  - name: ITSM-postgres
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: postgresql-db
-      service-plan: development
   - name: ITSM-db
-    type: com.sap.xs.hdi-container
+    type: org.cloudfoundry.managed-service
     parameters:
       service: hana
       service-plan: hdi-shared
