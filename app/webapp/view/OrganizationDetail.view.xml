@@ -1,0 +1,198 @@
+<mvc:View
+  controllerName="itsm.ui.controller.OrganizationDetail"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:u="sap.ui.unified"
+  displayBlock="true">
+
+  <Page id="orgDetailPage" showHeader="false" backgroundDesign="Transparent" class="appBg densePage">
+
+    <Bar class="appHeader">
+      <contentLeft>
+        <Button icon="sap-icon://nav-back" type="Transparent" tooltip="Back" press=".onBack" class="sapUiTinyMarginEnd"/>
+        <Image src="images/ccentrik.png" height="30px" densityAware="false" class="appLogo"/>
+      </contentLeft>
+      <contentMiddle>
+        <Title text="{name}" class="appHeaderTitle"/>
+      </contentMiddle>
+    </Bar>
+
+    <IconTabBar id="orgTabs" expanded="true" class="sapUiSmallMarginTop">
+      <items>
+
+        <IconTabFilter text="Details" key="details">
+          <VBox class="sectionCard">
+            <Text text="ORGANIZATION DETAILS" class="sectionPill"/>
+            <VBox class="formGrid">
+              <VBox class="formField">
+                <Label text="Organization Name" required="true"/>
+                <Input value="{name}" width="100%"/>
+              </VBox>
+              <VBox class="formField">
+                <Label text="Code" required="true"/>
+                <Input value="{code}" width="100%"/>
+              </VBox>
+              <VBox class="formField">
+                <Label text="Status"/>
+                <Switch state="{isActive}" customTextOn="Active" customTextOff="Inactive"/>
+              </VBox>
+            </VBox>
+            <Button text="Save Details" type="Emphasized" class="saveBtn sapUiSmallMarginTop" press=".onSaveDetails"/>
+          </VBox>
+        </IconTabFilter>
+
+        <IconTabFilter text="Users" key="users">
+          <VBox class="sectionCard">
+            <Text text="ORGANIZATION USERS" class="sectionPill"/>
+            <MessageStrip
+              text="Creating a user here only adds their record. A working login still needs to be provisioned separately (mocked auth locally, identity provider in production)."
+              type="Information" showIcon="true" showCloseButton="false" class="attachmentsNote"/>
+
+            <Table id="orgUsersTable"
+              items="{ path: '/Users', parameters: { $select: 'ID,userId,name,email,role,isActive,client' }, sorter: { path: 'name' } }"
+              noDataText="No users in this organization yet.">
+              <headerToolbar>
+                <OverflowToolbar style="Clear">
+                  <ToolbarSpacer/>
+                  <Button text="Add User" icon="sap-icon://add" class="submitBtn" press=".onAddUser"/>
+                </OverflowToolbar>
+              </headerToolbar>
+              <columns>
+                <Column width="10rem"><Text text="Name"/></Column>
+                <Column width="14rem"><Text text="Email"/></Column>
+                <Column width="10rem"><Text text="Role"/></Column>
+                <Column width="7rem"><Text text="Status"/></Column>
+              </columns>
+              <items>
+                <ColumnListItem>
+                  <cells>
+                    <Text text="{name}"/>
+                    <Text text="{email}"/>
+                    <Select selectedKey="{role}" change=".onUserRoleChange">
+                      <core:Item key="END_USER" text="End User"/>
+                      <core:Item key="SERVICE_GROUP" text="Service Group"/>
+                      <core:Item key="CONSULTANT" text="Consultant"/>
+                    </Select>
+                    <Switch state="{isActive}" customTextOn="Active" customTextOff="Inactive" change=".onToggleUserActive"/>
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </VBox>
+        </IconTabFilter>
+
+        <IconTabFilter text="Theme" key="theme">
+          <VBox class="sectionCard">
+            <Text text="ORGANIZATION THEME" class="sectionPill"/>
+            <VBox class="formGrid">
+              <VBox class="formField">
+                <Label text="Theme Type"/>
+                <Select id="themeTypeSelect" selectedKey="{themeType}" width="100%">
+                  <core:Item key="SOLID" text="Single Color"/>
+                  <core:Item key="GRADIENT" text="Gradient"/>
+                </Select>
+              </VBox>
+              <VBox class="formField">
+                <Label text="Apply Theme To"/>
+                <Select id="themeScopeSelect" selectedKey="{themeScope}" width="100%">
+                  <core:Item key="HEADER" text="Header strip &amp; buttons only"/>
+                  <core:Item key="BACKGROUND" text="Whole app background"/>
+                </Select>
+              </VBox>
+              <VBox class="formField">
+                <Label text="Primary Color"/>
+                <HBox class="colorPickRow">
+                  <Input id="primaryColorInput" value="{primaryColor}" placeholder="#2a78d6" width="100%"/>
+                  <Button icon="sap-icon://palette" tooltip="Pick a color" press=".onPickPrimaryColor" class="colorPickBtn"/>
+                </HBox>
+              </VBox>
+              <VBox class="formField" visible="{= ${themeType} === 'GRADIENT'}">
+                <Label text="Secondary Color"/>
+                <HBox class="colorPickRow">
+                  <Input id="secondaryColorInput" value="{secondaryColor}" placeholder="#021a86" width="100%"/>
+                  <Button icon="sap-icon://palette" tooltip="Pick a color" press=".onPickSecondaryColor" class="colorPickBtn"/>
+                </HBox>
+              </VBox>
+              <VBox class="formField formFieldWide">
+                <Label text="Logo"/>
+                <HBox alignItems="Center" class="logoUploadRow">
+                  <Image src="{= ${logo} || 'images/ccentrik.png' }" height="26px" class="logoPreviewThumb"/>
+                  <u:FileUploader
+                    id="logoFileUploader"
+                    buttonOnly="true"
+                    iconFirst="true"
+                    icon="sap-icon://upload"
+                    buttonText="Upload Logo"
+                    style="Transparent"
+                    change=".onLogoFileSelected"
+                    class="attachmentsUploadBtn"/>
+                  <Button text="Remove" type="Transparent" visible="{= !!${logo} }" press=".onRemoveLogo"/>
+                </HBox>
+                <Text text="Leave empty to use the default ccentrik logo." class="fieldHint"/>
+              </VBox>
+            </VBox>
+
+            <Text text="Preview — this org's End User screen" class="subPill sapUiSmallMarginTop"/>
+            <core:HTML content="{parts: ['themeType', 'themeScope', 'primaryColor', 'secondaryColor', 'logo', 'code'], formatter: '.formatThemePreviewHtml'}"/>
+
+            <Button text="Save Theme" type="Emphasized" class="saveBtn sapUiSmallMarginTop" press=".onSaveTheme"/>
+          </VBox>
+        </IconTabFilter>
+
+      </items>
+    </IconTabBar>
+
+    <!-- ===== Add User: client is set programmatically to this org's code,
+         not shown here — Admin role isn't offered, it's a platform-level
+         role, not assignable per organization. ===== -->
+    <Dialog id="addUserDialog" title="Add User" contentWidth="24rem">
+      <VBox class="sapUiSmallMargin">
+        <Label text="Username" required="true"/>
+        <Input id="newUserId" width="100%" class="sapUiTinyMarginBottom"/>
+        <Label text="Name" required="true"/>
+        <Input id="newUserName" width="100%" class="sapUiTinyMarginBottom"/>
+        <Label text="Email"/>
+        <Input id="newUserEmail" width="100%" class="sapUiTinyMarginBottom"/>
+        <Label text="Role" required="true"/>
+        <Select id="newUserRole" width="100%" selectedKey="END_USER">
+          <core:Item key="END_USER" text="End User"/>
+          <core:Item key="SERVICE_GROUP" text="Service Group"/>
+          <core:Item key="CONSULTANT" text="Consultant"/>
+        </Select>
+      </VBox>
+      <beginButton>
+        <Button text="Create" type="Emphasized" press=".onSaveUser"/>
+      </beginButton>
+      <endButton>
+        <Button text="Cancel" press=".onCancelAddUser"/>
+      </endButton>
+    </Dialog>
+
+    <!-- ===== Crop the logo before it's uploaded: drag to reposition, slider
+         to zoom, both over a fixed-aspect frame matching the header's shape
+         (see onLogoFileSelected / crop handlers in the controller). ===== -->
+    <Dialog id="logoCropDialog" title="Crop Logo" contentWidth="22rem" afterOpen=".onLogoCropDialogAfterOpen" afterClose=".onLogoCropDialogAfterClose">
+      <VBox class="sapUiSmallMargin" alignItems="Center">
+        <SegmentedButton id="logoCropShape" selectedKey="WIDE" select=".onLogoCropShapeChange" class="sapUiTinyMarginBottom">
+          <items>
+            <SegmentedButtonItem key="WIDE" text="Wide"/>
+            <SegmentedButtonItem key="SQUARE" text="Square"/>
+            <SegmentedButtonItem key="TALL" text="Tall"/>
+          </items>
+        </SegmentedButton>
+        <core:HTML id="logoCropCanvasHost" content="&lt;div class='logoCropFrame'&gt;&lt;canvas id='logoCropCanvas' width='320' height='100'&gt;&lt;/canvas&gt;&lt;/div&gt;"/>
+        <Label text="Zoom" class="sapUiTinyMarginTop"/>
+        <Slider id="logoCropZoom" min="1" max="3" step="0.05" value="1" width="100%" liveChange=".onLogoCropZoomChange"/>
+        <Text text="Pick the shape closest to your logo, then drag to reposition it." class="fieldHint sapUiTinyMarginTop"/>
+      </VBox>
+      <beginButton>
+        <Button text="Apply &amp; Upload" type="Emphasized" press=".onApplyLogoCrop"/>
+      </beginButton>
+      <endButton>
+        <Button text="Cancel" press=".onCancelLogoCrop"/>
+      </endButton>
+    </Dialog>
+
+  </Page>
+</mvc:View>

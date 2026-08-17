@@ -10,7 +10,10 @@ service ITSMService {
     // Used to fill the Message Processor dropdown (Service Group picking
     // a Consultant to assign a ticket to).
     entity Users              as projection on master.User;
- 
+
+    entity OrganizationSLAs   as projection on master.OrganizationSLA;
+    entity Organizations      as projection on master.Organization;
+
     // Transaction Data
     // Main Tickets entity — role-based access control
     @restrict: [
@@ -38,9 +41,18 @@ service ITSMService {
     entity ServiceGroupWorklist as projection on txn.Ticket
         where status = 'SUBMITTED' and messageProcessor is null;
 
-    // Tells the frontend which persona the logged-in user is, so the UI
+    // Tells the frontend which persona/theme the logged-in user has, so the UI
     // can drive its role-based visibility model (see webapp/model/roleConfig.js).
-    function currentUser() returns { persona: String; userName: String; };
-    
+    function currentUser() returns {
+        persona: String;
+        userName: String;
+        theme: {
+            themeType: String;
+            themeScope: String;
+            primaryColor: String;
+            secondaryColor: String;
+            logo: String;
+        };
+    };
 
 }

@@ -2,6 +2,7 @@
   "name": "ITSM",
   "version": "1.0.0",
   "dependencies": {
+    "@cap-js/hana": "^2",
     "@cap-js/postgres": "^2",
     "@sap/cds": "^9",
     "@sap/xssec": "^4",
@@ -20,20 +21,78 @@
       "[development]": {
         "db": {
           "kind": "sqlite",
-          "credentials": { "url": "db/itsm.sqlite" }
+          "credentials": {
+            "url": "db/itsm.sqlite"
+          }
         }
       },
       "auth": {
         "kind": "mocked",
         "users": {
-          "sachin": { "password": "sachin123", "roles": ["ServiceGroup"] },
-          "aayush": { "password": "aayush123", "roles": ["Consultant"] },
-          "virat": { "password": "virat123", "roles": ["EndUser"] }
+          "sachin": {
+            "password": "sachin123",
+            "roles": [
+              "ServiceGroup"
+            ]
+          },
+          "aayush": {
+            "password": "aayush123",
+            "roles": [
+              "Consultant"
+            ]
+          },
+          "virat": {
+            "password": "virat123",
+            "roles": [
+              "EndUser"
+            ]
+          },
+          "sarthak": {
+            "password": "sarthak123",
+            "roles": [
+              "ServiceGroup"
+            ]
+          },
+          "jatin": {
+            "password": "jatin123",
+            "roles": [
+              "Consultant"
+            ]
+          },
+          "punit": {
+            "password": "punit123",
+            "roles": [
+              "EndUser"
+            ]
+          },
+          "dev": {
+            "password": "dev123",
+            "roles": [
+              "EndUser"
+            ]
+          },
+
+          "kirpal": {
+            "password": "kirpal123",
+            "roles": [
+              "EndUser"
+            ]
+          },
+          "admin": {
+            "password": "admin123",
+            "roles": [
+              "Admin"
+            ]
+          }
         }
       },
       "[production]": {
         "auth": "xsuaa"
-      }
+      },
+      "[hybrid]": {
+        "db": "hana"
+      },
+      "db": "hana"
     }
   }
 }

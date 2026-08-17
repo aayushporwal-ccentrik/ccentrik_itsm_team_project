@@ -30,21 +30,11 @@
       "libs": {
   "sap.m": {},
   "sap.ui.core": {},
-  "sap.ui.layout": {},
   "sap.ui.unified": {},
   "sap.viz": {}
 }
     },
     "models": {
-      "i18n": {
-        "type": "sap.ui.model.resource.ResourceModel",
-        
-        "settings": {
-  "bundleName": "itsm.ui.i18n.i18n",
-  "supportedLocales": [""],
-  "fallbackLocale": ""
-}
-      },
       "": {
         "dataSource": "incidentService",
         "settings": {
@@ -72,18 +62,19 @@
       "routes": [
   { "pattern": "", "name": "dashboard", "target": "dashboard" },
   { "pattern": "service-group-dashboard", "name": "serviceGroupDashboard", "target": "serviceGroupDashboard" },
-  { "pattern": "sg-tickets", "name": "sgTickets", "target": "sgTickets" },
   { "pattern": "create", "name": "create", "target": "main" },
   { "pattern": "ticket/{id}", "name": "detail", "target": "main" },
-  { "pattern": "assigned", "name": "assigned", "target": "assigned" }
+  { "pattern": "assigned", "name": "assigned", "target": "assigned" },
+  { "pattern": "organizations", "name": "organizations", "target": "organizations" },
+  { "pattern": "organizations/{id}", "name": "organizationDetail", "target": "organizationDetail" }
 ],
 "targets": {
   "dashboard": { "viewName": "Dashboard", "viewId": "dashboard" },
   "serviceGroupDashboard": { "viewName": "ServiceGroupDashboard", "viewId": "serviceGroupDashboard" },
-  "sgTickets": { "viewName": "ServiceGroupTickets", "viewId": "sgTickets" },
   "main": { "viewName": "Main", "viewId": "main" },
-  "analytics": { "viewName": "Analytics", "viewId": "analytics" },
-  "assigned": { "viewName": "AssignedTickets", "viewId": "assigned" }
+  "assigned": { "viewName": "AssignedTickets", "viewId": "assigned" },
+  "organizations": { "viewName": "Organizations", "viewId": "organizations" },
+  "organizationDetail": { "viewName": "OrganizationDetail", "viewId": "organizationDetail" }
 }
     }
   }

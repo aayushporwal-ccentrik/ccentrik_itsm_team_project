@@ -13,7 +13,7 @@
     <!-- ===== styled app header: logo (left) · title (center) · tile picker (right) ===== -->
     <Bar class="appHeader">
       <contentLeft>
-        <Image src="images/ccentrik.png" height="30px" densityAware="false" class="appLogo" press=".onGoDashboard"/>
+        <Image src="{= ${role>/theme/logo} || 'images/ccentrik.png' }" height="30px" densityAware="false" class="appLogo" press=".onGoDashboard"/>
       </contentLeft>
       <contentMiddle>
         <Title text="Service Desk Dashboard" class="appHeaderTitle"/>
@@ -74,7 +74,7 @@
           items="{
             path: '/Tickets',
             parameters: {
-              $expand: 'incidentForm($select=category1)',
+              $expand: 'incidentForm($select=category1),reportedByUser($select=client)',
               $orderby: 'createdAt desc'
             }
           }"
@@ -93,6 +93,10 @@
               <Select id="assigneeFilter" width="9rem" items="{filters>/assignees}" change=".onFilterChange">
                 <core:Item key="{filters>code}" text="{filters>name}"/>
               </Select>
+              <Select id="clientFilter" width="9rem" items="{filters>/clients}" change=".onFilterChange"
+                      visible="{= ${role>/persona} === 'SERVICE_GROUP' }">
+                <core:Item key="{filters>code}" text="{filters>name}"/>
+              </Select>
               <SearchField width="16rem" placeholder="Search # or description" search=".onSearch" liveChange=".onSearch"/>
               <Button text="Reset" icon="sap-icon://clear-filter" press=".onResetFilters"/>
               <Button id="tableExpandBtn" icon="sap-icon://full-screen" tooltip="Expand table" type="Transparent"
@@ -109,6 +113,7 @@
             <Column width="8rem"><Text text="Priority"/></Column>
             <Column width="8rem"><Text text="SLA"/></Column>
             <Column width="8rem"><Text text="Category"/></Column>
+            <Column width="9rem" visible="{= ${role>/persona} === 'SERVICE_GROUP' }"><Text text="Client"/></Column>
             <Column width="9rem"><Text text="Assigned To"/></Column>
             <Column width="9rem"><Text text="Created On"/></Column>
           </columns>
@@ -124,6 +129,7 @@
                   text="{parts: ['dueAt', 'completedAt'], formatter: '.formatSlaText'}"
                   state="{parts: ['dueAt', 'completedAt'], formatter: '.formatSlaState'}"/>
                 <Text text="{path: 'incidentForm/category1', formatter: '.formatCategoryName'}"/>
+                <Text text="{path: 'reportedByUser/client', formatter: '.formatClientName'}"/>
                 <Text text="{messageProcessor}"/>
                 <Text text="{path: 'createdAt', formatter: '.formatDateTime'}"/>
               </cells>
