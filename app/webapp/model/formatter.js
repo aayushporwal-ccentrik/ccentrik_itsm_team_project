@@ -64,7 +64,7 @@ sap.ui.define([], function () {
     // style attribute; the logo URL and org code are escaped before going
     // into src=/text — both are string-built HTML, unlike the real app's
     // own logo/header, which UI5 sets safely via property binding.
-    formatThemePreviewHtml: function (sThemeType, sThemeScope, sPrimary, sSecondary, sLogo, sCode) {
+    formatThemePreviewHtml: function (sThemeType, sThemeScope, sPrimary, sSecondary, sLogo, sCode, sNewTicketColor, sNewTicketText, sFormColor, sFormText) {
       var isHexColor = function (s) { return /^#[0-9a-fA-F]{3,8}$/.test(s || ""); };
       var escapeAttr = function (s) {
         return String(s || "").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -91,6 +91,18 @@ sap.ui.define([], function () {
       // Component.js makes for the real header, so this preview doesn't lie.
       var sTextOnFill = isLightColor(sColor) ? "#1e2a5e" : "#fff";
       var sGlow = hexToRgba(sColor, 0.35);
+
+      // Button colors are their own group, decoupled from the header fill
+      // above — same fallback values as style.css's .newTicketBtn/
+      // .formActionBtn, so an org with nothing set previews exactly what
+      // it'll actually look like. Delete keeps its own red default, same
+      // as the real .dangerBtn rule, unless the admin sets a form color.
+      var sNewTicketFill = isHexColor(sNewTicketColor) ? sNewTicketColor : "#2563eb";
+      var sNewTicketTextC = isHexColor(sNewTicketText) ? sNewTicketText : "#fff";
+      var sFormFillSet = isHexColor(sFormColor) ? sFormColor : "";
+      var sDeleteFill = sFormFillSet || "#bb0000";
+      var sFormFill = sFormFillSet || "#3b82f6";
+      var sFormTextC = isHexColor(sFormText) ? sFormText : "#fff";
 
       var sHeaderStyle = bBackground ? "background:transparent;" : "background:" + sFill + ";";
       var sContentStyle = bBackground ? "background:" + sFill + ";" : "background:#eef2ff;";
@@ -138,7 +150,7 @@ sap.ui.define([], function () {
         +   "<div class=\"themePreviewHeader\" style=\"" + sHeaderStyle + " color:" + sTextOnFill + ";\">"
         +     "<img class=\"themePreviewLogo\" src=\"" + sLogoSrc + "\" onerror=\"this.style.visibility='hidden'\"/>"
         +     "<span class=\"themePreviewTitle\" style=\"color:" + sTextOnFill + ";\">Service Desk Dashboard</span>"
-        +     "<span class=\"themePreviewBtn\" style=\"background:" + sColor + ";color:" + sTextOnFill + ";\">New Ticket</span>"
+        +     "<span class=\"themePreviewBtn\" style=\"background:" + sNewTicketFill + ";color:" + sNewTicketTextC + ";\">New Ticket</span>"
         +   "</div>"
         +   "<div class=\"themePreviewContent\" style=\"" + sContentStyle + "\">"
         +     "<div class=\"themePreviewTiles\">" + sTilesHtml + "</div>"
@@ -161,6 +173,14 @@ sap.ui.define([], function () {
         +         "<div class=\"themePreviewCatRow\"><span class=\"themePreviewCatDot\" style=\"background:#1baf7a;\"></span>Hardware</div>"
         +       "</div>"
         +     "</div>"
+        +   "</div>"
+        + "</div>"
+        + "<div class=\"themePreviewFormCard\">"
+        +   "<span class=\"themePreviewChartTitle\">TICKET FORM BUTTONS</span>"
+        +   "<div class=\"themePreviewFormBtnRow\">"
+        +     "<span class=\"themePreviewBtn\" style=\"background:" + sDeleteFill + ";color:" + sFormTextC + ";\">Delete</span>"
+        +     "<span class=\"themePreviewBtn\" style=\"background:" + sFormFill + ";color:" + sFormTextC + ";\">Save</span>"
+        +     "<span class=\"themePreviewBtn\" style=\"background:" + sFormFill + ";color:" + sFormTextC + ";\">Submit</span>"
         +   "</div>"
         + "</div>";
     }

@@ -37,7 +37,7 @@
           </VBox>
         </HBox>
         <ObjectAttribute title="Username" text="{profile>/userId}"/>
-        <ObjectAttribute title="Email" text="{profile>/email}"/>
+        <ObjectAttribute title="Email" text="{profile>/email}" visible="{= !!${profile>/email} }"/>
         <ObjectAttribute title="Organization" text="{profile>/organization}" visible="{= !!${profile>/organization} }"/>
         <ObjectAttribute title="Status" text="{= ${profile>/isActive} ? 'Active' : 'Inactive' }"/>
       </VBox>
@@ -138,7 +138,7 @@
               <Button text="Reset" icon="sap-icon://clear-filter" press=".onResetFilters"/>
               <Button id="tableExpandBtn" icon="sap-icon://full-screen" tooltip="Expand table" type="Transparent"
                       press=".onToggleTableExpand" class="tableExpandBtn"/>
-              <Button text="New Ticket" icon="sap-icon://add" class="submitBtn" press=".onCreateTicket"
+              <Button text="New Ticket" icon="sap-icon://add" class="newTicketBtn" press=".onCreateTicket"
                       visible="{= ${role>/persona} === 'END_USER' }"/>
             </OverflowToolbar>
           </headerToolbar>

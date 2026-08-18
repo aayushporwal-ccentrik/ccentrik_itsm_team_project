@@ -594,7 +594,11 @@ async function resolveUserTheme(sUserId) {
     themeScope: oOrg.themeScope,
     primaryColor: oOrg.primaryColor,
     secondaryColor: oOrg.secondaryColor,
-    logo: oOrg.logo
+    logo: oOrg.logo,
+    newTicketBtnColor: oOrg.newTicketBtnColor,
+    newTicketBtnTextColor: oOrg.newTicketBtnTextColor,
+    formBtnColor: oOrg.formBtnColor,
+    formBtnTextColor: oOrg.formBtnTextColor
   };
 }
 async function onBeforeCreateTicket(req) {

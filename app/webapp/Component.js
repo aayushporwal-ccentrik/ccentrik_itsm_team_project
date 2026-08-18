@@ -86,6 +86,15 @@ sap.ui.define([
     //                        to the app's original navy instead of reusing
     //                        the too-light color.
     //
+    // Two more pairs, set only when the admin has actually picked a color —
+    // otherwise left unset so CSS's own hardcoded fallback applies. Always a
+    // flat hex, never linear-gradient(...): the "New Ticket" button and the
+    // ticket form's action buttons must never render as a gradient, even
+    // when the org's header/background theme is set to Gradient.
+    // --new-ticket-fill / --new-ticket-text   Dashboard's "New Ticket" button
+    // --form-action-fill / --form-action-text  ticket form's Delete/Edit/
+    //                        Save/Assign/Resolve/Close/Submit buttons
+    //
     // themeScope picks WHERE --brand-fill is consumed as the page's canvas:
     // HEADER (default) -> just the header strip; .appBg (and cards/tables
     // on top of it, which have their own explicit white backgrounds already
@@ -112,6 +121,11 @@ sap.ui.define([
       oHtml.style.setProperty("--brand-text-on-fill", bLight ? "#1e2a5e" : "#ffffff");
       oHtml.style.setProperty("--brand-accent-on-white", bLight ? "#021a86" : oTheme.primaryColor);
       oHtml.setAttribute("data-theme-scope", oTheme.themeScope === "BACKGROUND" ? "background" : "header");
+
+      if (isHexColor(oTheme.newTicketBtnColor)) { oHtml.style.setProperty("--new-ticket-fill", oTheme.newTicketBtnColor); }
+      if (isHexColor(oTheme.newTicketBtnTextColor)) { oHtml.style.setProperty("--new-ticket-text", oTheme.newTicketBtnTextColor); }
+      if (isHexColor(oTheme.formBtnColor)) { oHtml.style.setProperty("--form-action-fill", oTheme.formBtnColor); }
+      if (isHexColor(oTheme.formBtnTextColor)) { oHtml.style.setProperty("--form-action-text", oTheme.formBtnTextColor); }
     },
 
     // Sends the user home if they open a route that is not theirs.

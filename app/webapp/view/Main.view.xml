@@ -25,13 +25,13 @@
         <Title text="{path: 'ticketType', formatter: '.formatTicketTypeName'}" class="appHeaderTitle"/>
       </contentMiddle>
       <contentRight>
-        <Button text="Delete" type="Negative" class="sapUiTinyMarginEnd" visible="{ui>/showDelete}" press=".onDelete"/>
-        <Button text="Edit" class="saveBtn sapUiTinyMarginEnd" visible="{ui>/showEdit}" press=".onEdit"/>
-        <Button text="{ui>/saveLabel}" class="saveBtn sapUiTinyMarginEnd" visible="{ui>/showSave}" enabled="{ui>/saveEnabled}" press=".onSave"/>
-        <Button text="Assign" class="submitBtn sapUiTinyMarginEnd" visible="{ui>/showAssign}" press=".onAssign"/>
-        <Button text="Mark Resolved" class="submitBtn sapUiTinyMarginEnd" visible="{ui>/showResolve}" press=".onResolve"/>
-        <Button text="Close Ticket" class="submitBtn sapUiTinyMarginEnd" visible="{ui>/showClose}" press=".onClose"/>
-        <Button text="Submit" class="submitBtn" visible="{ui>/showSubmit}" press=".onSubmit"/>
+        <Button text="Delete" class="formActionBtn dangerBtn sapUiTinyMarginEnd" visible="{ui>/showDelete}" press=".onDelete"/>
+        <Button text="Edit" class="formActionBtn sapUiTinyMarginEnd" visible="{ui>/showEdit}" press=".onEdit"/>
+        <Button text="{ui>/saveLabel}" class="formActionBtn sapUiTinyMarginEnd" visible="{ui>/showSave}" enabled="{ui>/saveEnabled}" press=".onSave"/>
+        <Button text="Assign" class="formActionBtn sapUiTinyMarginEnd" visible="{ui>/showAssign}" press=".onAssign"/>
+        <Button text="Mark Resolved" class="formActionBtn sapUiTinyMarginEnd" visible="{ui>/showResolve}" press=".onResolve"/>
+        <Button text="Close Ticket" class="formActionBtn sapUiTinyMarginEnd" visible="{ui>/showClose}" press=".onClose"/>
+        <Button text="Submit" class="formActionBtn" visible="{ui>/showSubmit}" press=".onSubmit"/>
       </contentRight>
     </Bar>
     <!-- Ticket id (or "New Ticket" before one's assigned) now lives here,

@@ -420,6 +420,12 @@ sap.ui.define([
         headers: { "Content-Type": this._resolveMimeType(oFile) },
         body: oFile,
         credentials: "same-origin"
+      }).then(function (oResponse) {
+        // fetch() only rejects on a network failure, not on a 4xx/5xx status —
+        // without this check a failed upload (bad CSRF token, auth, etc.)
+        // looks identical to a successful one to every caller.
+        if (!oResponse.ok) { throw new Error("Upload failed with status " + oResponse.status); }
+        return oResponse;
       });
     },
 

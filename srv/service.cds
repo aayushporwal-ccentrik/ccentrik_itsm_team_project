@@ -22,7 +22,7 @@ service ITSMService {
 
     // Tells the frontend which persona the logged-in user is and (for an
     // End User whose org has a theme set) what colors/logo to apply.
-    function currentUser() returns { persona: String; userName: String; theme: { themeType: String; themeScope: String; primaryColor: String; secondaryColor: String; logo: String; }; };
+    function currentUser() returns { persona: String; userName: String; theme: { themeType: String; themeScope: String; primaryColor: String; secondaryColor: String; logo: String; newTicketBtnColor: String; newTicketBtnTextColor: String; formBtnColor: String; formBtnTextColor: String; }; };
 
 }
  

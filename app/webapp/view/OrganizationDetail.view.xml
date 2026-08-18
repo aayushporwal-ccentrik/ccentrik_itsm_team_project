@@ -63,18 +63,19 @@
                 <Column width="14rem"><Text text="Email"/></Column>
                 <Column width="10rem"><Text text="Role"/></Column>
                 <Column width="7rem"><Text text="Status"/></Column>
+                <Column width="6rem"/>
               </columns>
               <items>
                 <ColumnListItem>
                   <cells>
                     <Text text="{name}"/>
                     <Text text="{email}"/>
-                    <Select selectedKey="{role}" change=".onUserRoleChange">
-                      <core:Item key="END_USER" text="End User"/>
-                      <core:Item key="SERVICE_GROUP" text="Service Group"/>
-                      <core:Item key="CONSULTANT" text="Consultant"/>
-                    </Select>
-                    <Switch state="{isActive}" customTextOn="Active" customTextOff="Inactive" change=".onToggleUserActive"/>
+                    <Text text="{path: 'role', formatter: '.formatRoleLabel'}"/>
+                    <ObjectStatus text="{= ${isActive} ? 'Active' : 'Inactive' }" state="{= ${isActive} ? 'Success' : 'Error' }"/>
+                    <HBox>
+                      <Button icon="sap-icon://edit" type="Transparent" tooltip="Edit User" press=".onEditUser"/>
+                      <Button icon="sap-icon://delete" type="Transparent" tooltip="Delete User" press=".onDeleteUser"/>
+                    </HBox>
                   </cells>
                 </ColumnListItem>
               </items>
@@ -133,8 +134,47 @@
               </VBox>
             </VBox>
 
+            <!-- Button colors are separate from the header/background theme
+                 above — always a flat color, never the gradient, and split
+                 into two independently controlled groups. -->
+            <Text text="New Ticket Button" class="subPill sapUiSmallMarginTop"/>
+            <VBox class="formGrid">
+              <VBox class="formField">
+                <Label text="Button Color"/>
+                <HBox class="colorPickRow">
+                  <Input id="newTicketBtnColorInput" value="{newTicketBtnColor}" placeholder="#2563eb" width="100%"/>
+                  <Button icon="sap-icon://palette" tooltip="Pick a color" press=".onPickNewTicketBtnColor" class="colorPickBtn"/>
+                </HBox>
+              </VBox>
+              <VBox class="formField">
+                <Label text="Text Color"/>
+                <HBox class="colorPickRow">
+                  <Input id="newTicketBtnTextColorInput" value="{newTicketBtnTextColor}" placeholder="#ffffff" width="100%"/>
+                  <Button icon="sap-icon://palette" tooltip="Pick a color" press=".onPickNewTicketBtnTextColor" class="colorPickBtn"/>
+                </HBox>
+              </VBox>
+            </VBox>
+
+            <Text text="Form Buttons (Delete / Save / Submit)" class="subPill sapUiSmallMarginTop"/>
+            <VBox class="formGrid">
+              <VBox class="formField">
+                <Label text="Button Color"/>
+                <HBox class="colorPickRow">
+                  <Input id="formBtnColorInput" value="{formBtnColor}" placeholder="#3b82f6" width="100%"/>
+                  <Button icon="sap-icon://palette" tooltip="Pick a color" press=".onPickFormBtnColor" class="colorPickBtn"/>
+                </HBox>
+              </VBox>
+              <VBox class="formField">
+                <Label text="Text Color"/>
+                <HBox class="colorPickRow">
+                  <Input id="formBtnTextColorInput" value="{formBtnTextColor}" placeholder="#ffffff" width="100%"/>
+                  <Button icon="sap-icon://palette" tooltip="Pick a color" press=".onPickFormBtnTextColor" class="colorPickBtn"/>
+                </HBox>
+              </VBox>
+            </VBox>
+
             <Text text="Preview — this org's End User screen" class="subPill sapUiSmallMarginTop"/>
-            <core:HTML content="{parts: ['themeType', 'themeScope', 'primaryColor', 'secondaryColor', 'logo', 'code'], formatter: '.formatThemePreviewHtml'}"/>
+            <core:HTML content="{parts: ['themeType', 'themeScope', 'primaryColor', 'secondaryColor', 'logo', 'code', 'newTicketBtnColor', 'newTicketBtnTextColor', 'formBtnColor', 'formBtnTextColor'], formatter: '.formatThemePreviewHtml'}"/>
 
             <Button text="Save Theme" type="Emphasized" class="saveBtn sapUiSmallMarginTop" press=".onSaveTheme"/>
           </VBox>
@@ -143,29 +183,33 @@
       </items>
     </IconTabBar>
 
-    <!-- ===== Add User: client is set programmatically to this org's code,
+    <!-- ===== Add/Edit User (one dialog, reused for both — see onAddUser/
+         onEditUser): client is set programmatically to this org's code,
          not shown here — Admin role isn't offered, it's a platform-level
-         role, not assignable per organization. ===== -->
+         role, not assignable per organization. Email doubles as the
+         username (User.userId) — that's the exact string CAP sees as
+         req.user.id for a real BTP login, so keeping one field instead of
+         two avoids a typed value silently not matching. ===== -->
     <Dialog id="addUserDialog" title="Add User" contentWidth="24rem">
       <VBox class="sapUiSmallMargin">
-        <Label text="Username" required="true"/>
-        <Input id="newUserId" width="100%" class="sapUiTinyMarginBottom"/>
+        <Label text="Email" required="true"/>
+        <Input id="newUserEmail" width="100%" class="sapUiTinyMarginBottom"/>
         <Label text="Name" required="true"/>
         <Input id="newUserName" width="100%" class="sapUiTinyMarginBottom"/>
-        <Label text="Email"/>
-        <Input id="newUserEmail" width="100%" class="sapUiTinyMarginBottom"/>
         <Label text="Role" required="true"/>
-        <Select id="newUserRole" width="100%" selectedKey="END_USER">
+        <Select id="newUserRole" width="100%" selectedKey="END_USER" class="sapUiTinyMarginBottom">
           <core:Item key="END_USER" text="End User"/>
           <core:Item key="SERVICE_GROUP" text="Service Group"/>
           <core:Item key="CONSULTANT" text="Consultant"/>
         </Select>
+        <Label text="Status"/>
+        <Switch id="newUserActive" state="true" customTextOn="Active" customTextOff="Inactive"/>
       </VBox>
       <beginButton>
-        <Button text="Create" type="Emphasized" press=".onSaveUser"/>
+        <Button id="userDialogSaveBtn" text="Create" type="Emphasized" press=".onSaveUser"/>
       </beginButton>
       <endButton>
-        <Button text="Cancel" press=".onCancelAddUser"/>
+        <Button text="Cancel" press=".onCancelUserDialog"/>
       </endButton>
     </Dialog>
 

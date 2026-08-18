@@ -124,6 +124,14 @@ context master {
         secondaryColor    : String(20);
         gradientDirection : String(20) default 'TOP_BOTTOM'; // fixed by spec, not user-editable
         logo              : String(500);                     // effective logo URL shown to end users — points at logoContent below once uploaded, or an admin-pasted external URL
+
+        // Button colors — always solid, never the header/background gradient.
+        // Two independent groups: the Dashboard's "New Ticket" button, and the
+        // ticket form's Delete/Edit/Save/Assign/Resolve/Close/Submit buttons.
+        newTicketBtnColor     : String(20);
+        newTicketBtnTextColor : String(20);
+        formBtnColor          : String(20);
+        formBtnTextColor      : String(20);
  
         @Core.ContentDisposition.Filename : logoFileName
         @Core.MediaType : logoMediaType

@@ -3,10 +3,11 @@ sap.ui.define([
   "sap/ui/model/Filter",
   "sap/ui/model/FilterOperator",
   "sap/m/MessageToast",
+  "sap/m/MessageBox",
   "sap/base/Log",
   "sap/ui/unified/ColorPickerPopover",
   "itsm/ui/model/formatter"
-], function (Controller, Filter, FilterOperator, MessageToast, Log, ColorPickerPopover, formatter) {
+], function (Controller, Filter, FilterOperator, MessageToast, MessageBox, Log, ColorPickerPopover, formatter) {
   "use strict";
 
   var UPDATE_GROUP = "incidentGroup";
@@ -21,6 +22,12 @@ sap.ui.define([
     WIDE: { w: 320, h: 100 },
     SQUARE: { w: 200, h: 200 },
     TALL: { w: 160, h: 220 }
+  };
+
+  var ROLE_LABELS = {
+    END_USER: "End User",
+    SERVICE_GROUP: "Service Group",
+    CONSULTANT: "Consultant"
   };
 
   // ColorPickerPopover returns "rgb(r,g,b)" when a color is picked via the
@@ -265,6 +272,13 @@ sap.ui.define([
         headers: { "Content-Type": sMediaType || "image/png" },
         body: oBlob,
         credentials: "same-origin"
+      }).then(function (oResponse) {
+        // fetch() only rejects on a network failure, not on a 4xx/5xx status —
+        // without this check a failed upload (bad CSRF token, auth, etc.) still
+        // looks like a success, and "logo" gets saved pointing at a stream
+        // that was never actually written — 404 the next time it's loaded.
+        if (!oResponse.ok) { throw new Error("Upload failed with status " + oResponse.status); }
+        return oResponse;
       });
     },
 
@@ -315,6 +329,22 @@ sap.ui.define([
       this._openColorPicker(oEvent.getSource(), "secondaryColor");
     },
 
+    onPickNewTicketBtnColor: function (oEvent) {
+      this._openColorPicker(oEvent.getSource(), "newTicketBtnColor");
+    },
+
+    onPickNewTicketBtnTextColor: function (oEvent) {
+      this._openColorPicker(oEvent.getSource(), "newTicketBtnTextColor");
+    },
+
+    onPickFormBtnColor: function (oEvent) {
+      this._openColorPicker(oEvent.getSource(), "formBtnColor");
+    },
+
+    onPickFormBtnTextColor: function (oEvent) {
+      this._openColorPicker(oEvent.getSource(), "formBtnTextColor");
+    },
+
     onUserRoleChange: function () {
       this.getOwnerComponent().getModel().submitBatch(UPDATE_GROUP).then(function () {
         MessageToast.show("Role updated.");
@@ -327,30 +357,98 @@ sap.ui.define([
       });
     },
 
+    formatRoleLabel: function (sRole) {
+      return ROLE_LABELS[sRole] || sRole;
+    },
+
+    onDeleteUser: function (oEvent) {
+      var that = this;
+      var oContext = oEvent.getSource().getBindingContext();
+      var sName = oContext.getProperty("name");
+
+      MessageBox.confirm("Delete user \"" + sName + "\"? This cannot be undone.", {
+        onClose: function (sAction) {
+          if (sAction !== MessageBox.Action.OK) { return; }
+          var oModel = that.getOwnerComponent().getModel();
+          var pDeleted = oContext.delete(UPDATE_GROUP);
+          oModel.submitBatch(UPDATE_GROUP);
+          pDeleted.then(function () {
+            MessageToast.show("User deleted.");
+          }).catch(function (oError) {
+            Log.error("User delete failed", oError);
+            MessageBox.error("Could not delete the user.");
+          });
+        }
+      });
+    },
+
+    // Same dialog for both — _oEditUserContext is null in create mode, set
+    // to the row's context in edit mode. onSaveUser branches on that.
     onAddUser: function () {
-      this.byId("newUserId").setValue("");
-      this.byId("newUserName").setValue("");
+      this._oEditUserContext = null;
       this.byId("newUserEmail").setValue("");
+      this.byId("newUserEmail").setEnabled(true);
+      this.byId("newUserName").setValue("");
       this.byId("newUserRole").setSelectedKey("END_USER");
+      this.byId("newUserActive").setState(true);
+      this.byId("addUserDialog").setTitle("Add User");
+      this.byId("userDialogSaveBtn").setText("Create");
+      this.byId("addUserDialog").open();
+    },
+
+    // Email is locked here, not just pre-filled: it doubles as userId (see
+    // dialog note), which for a real BTP login has to exactly match
+    // req.user.id, and for a local mocked user is a fixed string from
+    // package.json — either way, nothing an edit here should be able to
+    // silently move. Set once at creation, fixed after. Wrong email typed
+    // at creation → delete and re-add, not edit.
+    onEditUser: function (oEvent) {
+      var oContext = oEvent.getSource().getBindingContext();
+      this._oEditUserContext = oContext;
+      this.byId("newUserEmail").setValue(oContext.getProperty("email"));
+      this.byId("newUserEmail").setEnabled(false);
+      this.byId("newUserName").setValue(oContext.getProperty("name"));
+      this.byId("newUserRole").setSelectedKey(oContext.getProperty("role"));
+      this.byId("newUserActive").setState(oContext.getProperty("isActive"));
+      this.byId("addUserDialog").setTitle("Edit User");
+      this.byId("userDialogSaveBtn").setText("Save");
       this.byId("addUserDialog").open();
     },
 
     onSaveUser: function () {
-      var sUserId = this.byId("newUserId").getValue().trim();
+      var sEmail = this.byId("newUserEmail").getValue().trim();
       var sName = this.byId("newUserName").getValue().trim();
-      if (!sUserId || !sName) {
-        MessageToast.show("Username and Name are required.");
+      if (!sName || (!this._oEditUserContext && !sEmail)) {
+        MessageToast.show("Email and Name are required.");
         return;
       }
 
+      var sRole = this.byId("newUserRole").getSelectedKey();
+      var bActive = this.byId("newUserActive").getState();
       var oModel = this.getOwnerComponent().getModel();
       var that = this;
+
+      if (this._oEditUserContext) {
+        this._oEditUserContext.setProperty("name", sName);
+        this._oEditUserContext.setProperty("role", sRole);
+        this._oEditUserContext.setProperty("isActive", bActive);
+        oModel.submitBatch(UPDATE_GROUP).then(function () {
+          that.byId("addUserDialog").close();
+          MessageToast.show("User updated.");
+          that._oEditUserContext = null;
+        }).catch(function (oError) {
+          Log.error("User update failed", oError);
+          MessageToast.show("Could not update user.");
+        });
+        return;
+      }
+
       var oContext = oModel.bindList("/Users").create({
-        userId: sUserId,
+        userId: sEmail,
         name: sName,
-        email: this.byId("newUserEmail").getValue().trim(),
-        role: this.byId("newUserRole").getSelectedKey(),
-        isActive: true,
+        email: sEmail,
+        role: sRole,
+        isActive: bActive,
         client: this._sOrgCode
       });
 
@@ -369,7 +467,8 @@ sap.ui.define([
       oModel.submitBatch(UPDATE_GROUP);
     },
 
-    onCancelAddUser: function () {
+    onCancelUserDialog: function () {
+      this._oEditUserContext = null;
       this.byId("addUserDialog").close();
     }
   });

@@ -149,6 +149,33 @@ html[data-theme-scope="background"] .appHeader {
 .submitBtn .sapMBtnContent, .submitBtn bdi, .submitBtn .sapUiIcon { color: var(--brand-text-on-fill, #fff) !important; }
 .submitBtn:hover .sapMBtnInner { filter: brightness(0.88); }
 
+/* Dashboard's "New Ticket" button — its own color group, admin-controlled,
+   always a flat color (never the header/background gradient var). */
+.newTicketBtn .sapMBtnInner {
+  background: var(--new-ticket-fill, #2563eb) !important; border-color: var(--new-ticket-fill, #2563eb) !important;
+  border-radius: 12px !important;
+  transition: filter .15s ease;
+}
+.newTicketBtn .sapMBtnContent, .newTicketBtn bdi, .newTicketBtn .sapUiIcon { color: var(--new-ticket-text, #fff) !important; }
+.newTicketBtn:hover .sapMBtnInner { filter: brightness(0.88); }
+
+/* Ticket form's action buttons (Edit/Save/Assign/Resolve/Close/Submit) —
+   a second, separately admin-controlled color group. Delete keeps its own
+   red default (danger convention) but still honors the same colors if the
+   admin sets them, via the higher-specificity .dangerBtn pair below. */
+.formActionBtn .sapMBtnInner {
+  background: var(--form-action-fill, #3b82f6) !important; border-color: var(--form-action-fill, #3b82f6) !important;
+  border-radius: 12px !important;
+  transition: filter .15s ease;
+}
+.formActionBtn .sapMBtnContent, .formActionBtn bdi, .formActionBtn .sapUiIcon { color: var(--form-action-text, #fff) !important; }
+.formActionBtn:hover .sapMBtnInner { filter: brightness(0.88); }
+
+.formActionBtn.dangerBtn .sapMBtnInner {
+  background: var(--form-action-fill, #bb0000) !important; border-color: var(--form-action-fill, #bb0000) !important;
+}
+.formActionBtn.dangerBtn .sapMBtnContent, .formActionBtn.dangerBtn bdi, .formActionBtn.dangerBtn .sapUiIcon { color: var(--form-action-text, #fff) !important; }
+
 /* ---- Attachments: note banner + count/upload row + document table ---- */
 .attachmentsNote { margin-bottom: 12px; border-radius: 8px; }
 .attachmentsToolbar { margin-bottom: 8px; }
@@ -687,6 +714,25 @@ html[data-theme-scope="background"] .sapMITBSelected .sapMITBText { color: var(-
   font-weight: 600;
   padding: 5px 12px;
   border-radius: 8px;
+}
+
+/* A second, separate mockup card below the dashboard window — the ticket
+   form is its own page in the real app, so these buttons don't belong
+   inside the dashboard "screenshot" above, just shown at the same size. */
+.themePreviewFormCard {
+  width: 100%;
+  max-width: 860px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(15,23,42,.06);
+  padding: 12px 16px 16px;
+  margin: 4px 0 4px;
+  animation: themePreviewSettle .25s ease-out;
+}
+.themePreviewFormBtnRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 /* The page canvas behind everything — .appBg's usual light blue in HEADER
