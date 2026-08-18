@@ -32,7 +32,7 @@
   },
   "sap.cloud": {
     "public": true,
-    "service": "ITSM.service"
+    "service": "ITSM"
   },
   "sap.ui": {
     "technology": "UI5",
