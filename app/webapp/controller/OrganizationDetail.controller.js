@@ -269,7 +269,12 @@ sap.ui.define([
     },
 
     _getServiceUrl: function () {
-      return this.getOwnerComponent().getManifestEntry("sap.app").dataSources.incidentService.uri;
+      // The model's own resolved URL, not the raw manifest.json string — Work Zone
+      // runs the app inside cp.portal's own document, so a manually-built relative
+      // string resolves against the wrong base. The bound model already resolved
+      // this correctly via UI5's resource-root mapping.
+      var sUrl = this.getOwnerComponent().getModel().sServiceUrl;
+      return sUrl.replace(/\/?$/, "/");
     },
 
     onRemoveLogo: function () {
