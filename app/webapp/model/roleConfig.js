@@ -19,7 +19,6 @@ sap.ui.define([], function () {
         subStatus: false
       },
       editable: {
-        ticketType: true,
         supportTeam: false,
         messageProcessor: false,
         category1: true,
@@ -63,7 +62,6 @@ sap.ui.define([], function () {
         subStatus: true
       },
       editable: {
-        ticketType: false,
         supportTeam: true,
         messageProcessor: true,
         category1: true,
@@ -107,7 +105,6 @@ sap.ui.define([], function () {
         subStatus: true
       },
       editable: {
-        ticketType: false,
         supportTeam: false,
         messageProcessor: false,
         category1: false,

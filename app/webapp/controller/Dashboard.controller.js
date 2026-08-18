@@ -3,9 +3,10 @@ sap.ui.define([
   "sap/ui/model/json/JSONModel",
   "sap/ui/model/Filter",
   "sap/ui/model/FilterOperator",
+  "sap/m/MessageToast",
   "itsm/ui/model/lookupValues",
   "itsm/ui/model/formatter"
-], function (Controller, JSONModel, Filter, FilterOperator, fetchLookup, formatter) {
+], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, fetchLookup, formatter) {
   "use strict";
 
   // The full pool of KPI tiles a user can choose from — exactly 6 are
@@ -25,6 +26,13 @@ sap.ui.define([
   var TILE_PREF_KEY = "itsm.dashboard.tileKeys";
 
   var CLOSED_STATUS_CODE = "CLOSED";
+
+  var PERSONA_LABELS = {
+    END_USER: "End User",
+    SERVICE_GROUP: "Service Group",
+    CONSULTANT: "Consultant",
+    ADMIN: "Admin"
+  };
 
   // Same categorical palette as the rest of the app's charts.
   var CHART_PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#4a3aa7"];
@@ -515,8 +523,27 @@ sap.ui.define([
       this._applyFilters();
     },
 
+    // Ticket type is picked here, before the form even opens — it's fixed
+    // for the ticket after this, so the form itself no longer has a
+    // Ticket Type field to edit.
     onCreateTicket: function () {
+      this.byId("newTicketTypeSelect").setSelectedKey("");
+      this.byId("ticketTypeDialog").open();
+    },
+
+    onConfirmTicketType: function () {
+      var sType = this.byId("newTicketTypeSelect").getSelectedKey();
+      if (!sType) {
+        MessageToast.show("Please select a ticket type");
+        return;
+      }
+      this.byId("ticketTypeDialog").close();
+      this.getOwnerComponent().setPendingTicketType(sType);
       this.getOwnerComponent().getRouter().navTo("create");
+    },
+
+    onCancelTicketType: function () {
+      this.byId("ticketTypeDialog").close();
     },
 
     onTicketPress: function (oEvent) {
@@ -541,6 +568,41 @@ sap.ui.define([
       var oBtn = this.byId("tableExpandBtn");
       oBtn.setIcon(this._bChartCollapsed ? "sap-icon://exit-full-screen" : "sap-icon://full-screen");
       oBtn.setTooltip(this._bChartCollapsed ? "Restore chart" : "Expand table");
+    },
+
+    // Own User row (name/email/org) + the persona already known from
+    // login — one small read, shown in a popover, nothing navigated to.
+    onShowProfile: function (oEvent) {
+      var that = this;
+      var oSource = oEvent.getSource();
+      var oRoleModel = this.getOwnerComponent().getModel("role");
+      var sUserId = oRoleModel.getProperty("/userName");
+      var sPersona = oRoleModel.getProperty("/persona");
+      var oModel = this.getOwnerComponent().getModel();
+
+      oModel.bindList("/Users", undefined, undefined, new Filter("userId", FilterOperator.EQ, sUserId))
+        .requestContexts().then(function (aContexts) {
+          var oUser = aContexts.length ? aContexts[0].getObject() : {};
+
+          var pOrgName = oUser.client
+            ? oModel.bindList("/Organizations", undefined, undefined, new Filter("code", FilterOperator.EQ, oUser.client))
+                .requestContexts().then(function (aOrgs) {
+                  return aOrgs.length ? aOrgs[0].getObject().name : oUser.client;
+                })
+            : Promise.resolve("");
+
+          pOrgName.then(function (sOrgName) {
+            that.getView().setModel(new JSONModel({
+              name: oUser.name || sUserId,
+              userId: sUserId,
+              email: oUser.email || "",
+              roleLabel: PERSONA_LABELS[sPersona] || sPersona,
+              organization: sOrgName,
+              isActive: oUser.isActive !== false
+            }), "profile");
+            that.byId("profilePopover").openBy(oSource);
+          });
+        });
     },
 
     /* ---------------------------------------------------------

@@ -22,7 +22,7 @@
         <Image src="{= ${role>/theme/logo} || 'images/ccentrik.png' }" height="30px" densityAware="false" class="appLogo" press=".onGoDashboard"/>
       </contentLeft>
       <contentMiddle>
-        <Title text="Service Desk" class="appHeaderTitle"/>
+        <Title text="{path: 'ticketType', formatter: '.formatTicketTypeName'}" class="appHeaderTitle"/>
       </contentMiddle>
       <contentRight>
         <Button text="Delete" type="Negative" class="sapUiTinyMarginEnd" visible="{ui>/showDelete}" press=".onDelete"/>
@@ -63,14 +63,6 @@
           <VBox class="sectionCard">
             <Text text="GENERAL DATA &amp; CATEGORY ASSIGNMENT" class="sectionPill"/>
             <VBox class="formGrid">
-
-              <VBox class="formField">
-                <Label text="Ticket Type"/>
-                <Select selectedKey="{ticketType}" forceSelection="false" enabled="{ui>/editable/ticketType}" width="100%"
-                        items="{ path: '/LookupValues', parameters: { $filter : &quot;lookupType eq 'TICKETTYPE' and isActive eq true&quot;, $orderby: 'sequence' } }">
-                  <core:Item key="{code}" text="{name}"/>
-                </Select>
-              </VBox>
 
               <VBox class="formField">
                 <Label text="Reported By"/>

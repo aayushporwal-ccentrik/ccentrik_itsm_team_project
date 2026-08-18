@@ -5,8 +5,9 @@ sap.ui.define([
   "sap/m/MessageBox",
   "sap/base/Log",
   "itsm/ui/model/roleConfig",
-  "itsm/ui/model/formatter"
-], function (Controller, JSONModel, MessageToast, MessageBox, Log, getTicketFormUiModel, formatter) {
+  "itsm/ui/model/formatter",
+  "itsm/ui/model/lookupValues"
+], function (Controller, JSONModel, MessageToast, MessageBox, Log, getTicketFormUiModel, formatter, fetchLookup) {
   "use strict";
 
   var UPDATE_GROUP = "incidentGroup";
@@ -63,10 +64,14 @@ sap.ui.define([
 
       this._bCreateMode = true;
       this._bEditing = true;
+      this._ensureTicketTypeNames();
 
       var oListBinding = this.getView().getModel().bindList("/Tickets");
       var oContext = oListBinding.create({
         status: "DRAFT",
+        // Picked in the "New Ticket" popup on the Dashboard, before this
+        // route even opens — not a field on this form anymore.
+        ticketType: this.getOwnerComponent().takePendingTicketType(),
         reportedBy: this._getUserName(),
         incidentForm: {}
       });
@@ -80,7 +85,24 @@ sap.ui.define([
     _onDetail: function (oEvent) {
       this._bCreateMode = false;
       this._bEditing = false;
+      this._ensureTicketTypeNames();
       this._loadTicket(oEvent.getParameter("arguments").id);
+    },
+
+    // Fetched once, reused by the header title's formatter (see
+    // formatTicketTypeName) so it shows "Incident"/"Service Request"/...
+    // instead of the raw code.
+    _ensureTicketTypeNames: function () {
+      if (this._mTicketTypeName) { return; }
+      this._mTicketTypeName = {};
+      var that = this;
+      fetchLookup(this.getOwnerComponent().getModel(), "TICKETTYPE").then(function (aRows) {
+        aRows.forEach(function (r) { that._mTicketTypeName[r.code] = r.name; });
+      });
+    },
+
+    formatTicketTypeName: function (sCode) {
+      return (this._mTicketTypeName && this._mTicketTypeName[sCode]) || "Service Desk";
     },
 
     // One request for the ticket, its incident form and its attachments —

@@ -152,6 +152,18 @@ sap.ui.define([
       var oFilter = this._oPendingTicketFilter;
       this._oPendingTicketFilter = null;
       return oFilter;
+    },
+
+    // Same idea, for the ticket type picked in the "New Ticket" popup
+    // before the create form even opens.
+    setPendingTicketType: function (sTicketType) {
+      this._sPendingTicketType = sTicketType;
+    },
+
+    takePendingTicketType: function () {
+      var sTicketType = this._sPendingTicketType;
+      this._sPendingTicketType = null;
+      return sTicketType;
     }
   });
 });

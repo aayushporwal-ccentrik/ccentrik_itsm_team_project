@@ -212,6 +212,9 @@ html[data-theme-scope="background"] .appHeader {
   margin: 1px 0 0;
 }
 
+.profileName { color: #1e2a5e; font-size: 15px; font-weight: 700; }
+.profileRole { color: #6b7280; font-size: 12px; }
+
 /* Whole-app-background scope: these sit directly on the themed canvas, not
    inside a white .sectionCard — their normal dark-on-light colors above
    turn near-invisible on a dark org color. Everything already inside a
@@ -268,6 +271,7 @@ html[data-theme-scope="background"] .sapMITBSelected .sapMITBText { color: var(-
   background: #dbe4ff !important;
   border-color: #dbe4ff !important;
 }
+.headerAvatarBtn { margin-right: 8px; cursor: pointer; }
 
 /* ---- KPI tiles: compact, equal, one line ---- */
 .tileRow {

@@ -19,10 +19,47 @@
         <Title text="Service Desk Dashboard" class="appHeaderTitle"/>
       </contentMiddle>
       <contentRight>
+        <Avatar src="sap-icon://person-placeholder" displayShape="Circle" displaySize="XS" interactive="true"
+                tooltip="My Profile" press=".onShowProfile" class="headerAvatarBtn"/>
         <Button icon="sap-icon://action-settings" tooltip="Choose which 6 KPI tiles to show" type="Transparent"
                 class="headerActionBtn" press=".onManageTiles"/>
       </contentRight>
     </Bar>
+
+    <!-- ===== My Profile ===== -->
+    <Popover id="profilePopover" title="My Profile" placement="Bottom" contentWidth="18rem">
+      <VBox class="sapUiSmallMargin">
+        <HBox alignItems="Center" class="sapUiSmallMarginBottom">
+          <core:Icon src="sap-icon://person-placeholder" size="2rem" class="sapUiSmallMarginEnd"/>
+          <VBox>
+            <Text text="{profile>/name}" class="profileName"/>
+            <Text text="{profile>/roleLabel}" class="profileRole"/>
+          </VBox>
+        </HBox>
+        <ObjectAttribute title="Username" text="{profile>/userId}"/>
+        <ObjectAttribute title="Email" text="{profile>/email}"/>
+        <ObjectAttribute title="Organization" text="{profile>/organization}" visible="{= !!${profile>/organization} }"/>
+        <ObjectAttribute title="Status" text="{= ${profile>/isActive} ? 'Active' : 'Inactive' }"/>
+      </VBox>
+    </Popover>
+
+    <!-- ===== New Ticket: pick the ticket type before the form opens —
+         it's fixed for the ticket after this, not editable in the form. ===== -->
+    <Dialog id="ticketTypeDialog" title="New Ticket">
+      <VBox class="sapUiSmallMargin">
+        <Label text="Ticket Type" required="true"/>
+        <Select id="newTicketTypeSelect" width="100%" forceSelection="false"
+                items="{ path: '/LookupValues', parameters: { $filter : &quot;lookupType eq 'TICKETTYPE' and isActive eq true&quot;, $orderby: 'sequence' } }">
+          <core:Item key="{code}" text="{name}"/>
+        </Select>
+      </VBox>
+      <beginButton>
+        <Button text="OK" type="Emphasized" press=".onConfirmTicketType"/>
+      </beginButton>
+      <endButton>
+        <Button text="Cancel" press=".onCancelTicketType"/>
+      </endButton>
+    </Dialog>
 
     <!-- ===== KPI tile picker: pick exactly 6 tiles out of the full pool. ===== -->
     <Dialog id="tilePickerDialog" title="Choose 6 KPI Tiles" contentWidth="24rem">
