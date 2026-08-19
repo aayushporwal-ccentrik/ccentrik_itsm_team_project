@@ -143,8 +143,12 @@ sap.ui.define([], function () {
   // flags the view binds to.
   return function getTicketFormUiModel(sPersona, bCreate, bEditing, sStatus) {
     var oConfig = ROLE_CONFIG[sPersona] || ROLE_CONFIG.END_USER;
-    var bActive = oConfig.activeWhen === "create" ? bCreate : bEditing;
     var bDraft = sStatus === "DRAFT";
+    // End User's ticket stays theirs to edit for as long as it's a Draft —
+    // whether that's the initial create session (bCreate) or reopening the
+    // same Draft later from the Dashboard (bCreate is false then, only
+    // bDraft is true) — Submit is what finally locks it, not navigating away.
+    var bActive = oConfig.activeWhen === "create" ? (bCreate || bDraft) : bEditing;
 
     var oEditable = {};
     Object.keys(oConfig.editable).forEach(function (sField) {
@@ -164,7 +168,7 @@ sap.ui.define([], function () {
       showBack: true,
       showDelete: sPersona === "END_USER" && bDraft,
       showEdit: sPersona !== "END_USER" && !bCreate && !bEditing && !bDraft,
-      showSave: bEditing,
+      showSave: bActive,
       showSubmit: bCreate || (sPersona === "END_USER" && bDraft),
       saveLabel: "Save",
       saveEnabled: true,
