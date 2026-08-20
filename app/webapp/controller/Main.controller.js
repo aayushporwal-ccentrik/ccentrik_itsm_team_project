@@ -132,7 +132,13 @@ sap.ui.define([
     // state and stores the result.
     _refreshUiModel: function (sStatus) {
       var sPersona = this.getOwnerComponent().getModel("role").getProperty("/persona");
-      var oUiModel = getTicketFormUiModel(sPersona, !!this._bCreateMode, !!this._bEditing, sStatus);
+      var oContext = this.getView().getBindingContext();
+      // A brand new ticket's context stays transient (isTransient() true)
+      // until the server confirms the create — status is already "DRAFT"
+      // locally from the moment the form opens, so bDraft alone would show
+      // Delete before there's anything on the server yet to delete.
+      var bPersisted = !!oContext && !oContext.isTransient();
+      var oUiModel = getTicketFormUiModel(sPersona, !!this._bCreateMode, !!this._bEditing, sStatus, bPersisted);
       this.getView().getModel("ui").setData(oUiModel);
     },
 

@@ -141,7 +141,7 @@ sap.ui.define([], function () {
   // Combines the static table above with where the ticket is right now
   // (being created, opened for edit, or sitting as a Draft) into the
   // flags the view binds to.
-  return function getTicketFormUiModel(sPersona, bCreate, bEditing, sStatus) {
+  return function getTicketFormUiModel(sPersona, bCreate, bEditing, sStatus, bPersisted) {
     var oConfig = ROLE_CONFIG[sPersona] || ROLE_CONFIG.END_USER;
     var bDraft = sStatus === "DRAFT";
     // End User's ticket stays theirs to edit for as long as it's a Draft —
@@ -163,10 +163,11 @@ sap.ui.define([], function () {
       // Header buttons — workflow state, not a form field, so kept separate.
       // Save creates the ticket as Draft; Submit moves it straight to New
       // (either from the create form directly, or from a Draft opened later).
-      // Delete: only End User, and only while the ticket is still a Draft
-      // (not submitted yet) — once it's New or later, it can't be deleted.
+      // Delete: only End User, only while the ticket is still a Draft (not
+      // submitted yet), and only once it's actually been saved — a brand
+      // new, not-yet-saved ticket has nothing on the server to delete.
       showBack: true,
-      showDelete: sPersona === "END_USER" && bDraft,
+      showDelete: sPersona === "END_USER" && bDraft && !!bPersisted,
       showEdit: sPersona !== "END_USER" && !bCreate && !bEditing && !bDraft,
       showSave: bActive,
       showSubmit: bCreate || (sPersona === "END_USER" && bDraft),
