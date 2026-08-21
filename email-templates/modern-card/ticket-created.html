@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--
+  Modern Card · Ticket Created  →  Service Group
+  Trigger: status becomes NEW
+
+  Every placeholder value MUST be HTML-escaped by the renderer before substitution
+  (& < > " '), otherwise a ticket description containing markup breaks the layout.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>New Ticket Created</title>
+<!--[if mso]>
+<noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+<![endif]-->
+<style type="text/css">
+  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
+  body{margin:0 !important;padding:0 !important;width:100% !important;}
+  a{text-decoration:none;}
+  @media screen and (max-width:600px){
+    .sd-container{width:100% !important;}
+    .sd-stack{display:block !important;width:100% !important;}
+    .sd-pad{padding-left:20px !important;padding-right:20px !important;}
+    .sd-title{font-size:24px !important;}
+    .sd-number{font-size:28px !important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#f1f5f9;">
+
+<div style="display:none;font-size:1px;color:#f1f5f9;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">New ticket {{ticketNumber}} requires Service Group attention &mdash; {{shortDescription}}</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9;">
+<tr><td align="center" style="padding:24px 12px;">
+
+  <table role="presentation" class="sd-container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+    <!-- ============ HEADER ============ -->
+    <tr>
+      <td class="sd-pad" bgcolor="#1d4ed8" style="background-color:#1d4ed8;padding:32px 32px 28px 32px;border-radius:12px 12px 0 0;">
+        <!-- Logo is white artwork on transparency, so it sits straight on the
+             blue header — a white tile behind it would render it invisible.
+             Embedded by Content-ID: the sender MUST attach app/images/ccentrik.png
+             with cid "ccentrikLogo", or this renders as a broken image. -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td valign="middle"><img src="cid:ccentrikLogo" width="93" height="44" alt="Ccentrik" style="display:block;border:0;outline:none;text-decoration:none;width:93px;height:44px;" /></td>
+            <td valign="middle" style="padding-left:16px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:bold;color:#ffffff;">ITSM Service Desk</td>
+          </tr>
+        </table>
+        <div class="sd-title" style="font-family:Arial,Helvetica,sans-serif;font-size:29px;font-weight:bold;color:#ffffff;padding-top:26px;line-height:1.25;">New Ticket Created</div>
+        <div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#c7d7fb;padding-top:8px;line-height:1.5;">A new ticket has been created and requires your attention.</div>
+      </td>
+    </tr>
+
+    <!-- ============ CARD ============ -->
+    <tr>
+      <td style="background-color:#f1f5f9;background-image:linear-gradient(to bottom,#1d4ed8 0,#1d4ed8 40px,#f1f5f9 40px);padding:0 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;border-radius:12px;">
+          <tr>
+            <td class="sd-pad" style="padding:28px 28px 0 28px;">
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td valign="top" style="font-family:Arial,Helvetica,sans-serif;">
+                    <div style="font-size:11px;color:#64748b;letter-spacing:0.8px;text-transform:uppercase;">Ticket Number</div>
+                    <div class="sd-number" style="font-size:30px;font-weight:bold;color:#1d4ed8;padding-top:4px;letter-spacing:-0.5px;">{{ticketNumber}}</div>
+                  </td>
+                  <td valign="top" align="right" style="font-family:Arial,Helvetica,sans-serif;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="right">
+                      <tr><td bgcolor="#fee2e2" style="background-color:#fee2e2;border-radius:14px;padding:7px 15px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;color:#b91c1c;white-space:nowrap;">{{priority}}</td></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <div style="font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:bold;color:#0f172a;padding-top:18px;line-height:1.45;">{{shortDescription}}</div>
+
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-top:22px;border-bottom:1px solid #e2e8f0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="sd-stack" width="50%" valign="top" style="padding:16px 8px 16px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                      <td width="32" valign="top"><img src="cid:icon-type" width="32" height="32" alt="" style="display:block;border:0;outline:none;text-decoration:none;width:32px;height:32px;" /></td>
+                      <td valign="top" style="padding-left:11px;font-family:Arial,Helvetica,sans-serif;">
+                        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Type</div>
+                        <div style="font-size:14px;color:#0f172a;font-weight:bold;padding-top:3px;">{{ticketType}}</div>
+                      </td>
+                    </tr></table>
+                  </td>
+                  <td class="sd-stack" width="50%" valign="top" style="padding:16px 0 16px 8px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                      <td width="32" valign="top"><img src="cid:icon-team" width="32" height="32" alt="" style="display:block;border:0;outline:none;text-decoration:none;width:32px;height:32px;" /></td>
+                      <td valign="top" style="padding-left:11px;font-family:Arial,Helvetica,sans-serif;">
+                        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Support Team</div>
+                        <div style="font-size:14px;color:#0f172a;font-weight:bold;padding-top:3px;">{{supportTeam}}</div>
+                      </td>
+                    </tr></table>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="sd-stack" width="50%" valign="top" style="padding:16px 8px 16px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                      <td width="32" valign="top"><img src="cid:icon-status" width="32" height="32" alt="" style="display:block;border:0;outline:none;text-decoration:none;width:32px;height:32px;" /></td>
+                      <td valign="top" style="padding-left:11px;font-family:Arial,Helvetica,sans-serif;">
+                        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Status</div>
+                        <div style="font-size:14px;color:#16a34a;font-weight:bold;padding-top:3px;">{{status}}</div>
+                      </td>
+                    </tr></table>
+                  </td>
+                  <td class="sd-stack" width="50%" valign="top" style="padding:16px 0 16px 8px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                      <td width="32" valign="top"><img src="cid:icon-calendar" width="32" height="32" alt="" style="display:block;border:0;outline:none;text-decoration:none;width:32px;height:32px;" /></td>
+                      <td valign="top" style="padding-left:11px;font-family:Arial,Helvetica,sans-serif;">
+                        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Created On</div>
+                        <div style="font-size:14px;color:#0f172a;font-weight:bold;padding-top:3px;">{{createdAt}}</div>
+                      </td>
+                    </tr></table>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="sd-stack" width="50%" valign="top" style="padding:16px 8px 22px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                      <td width="32" valign="top"><img src="cid:icon-user" width="32" height="32" alt="" style="display:block;border:0;outline:none;text-decoration:none;width:32px;height:32px;" /></td>
+                      <td valign="top" style="padding-left:11px;font-family:Arial,Helvetica,sans-serif;">
+                        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Reported By</div>
+                        <div style="font-size:14px;color:#0f172a;font-weight:bold;padding-top:3px;">{{reportedBy}}</div>
+                      </td>
+                    </tr></table>
+                  </td>
+                  <td class="sd-stack" width="50%" valign="top" style="padding:16px 0 22px 8px;">&nbsp;</td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <tr>
+            <td class="sd-pad" align="center" bgcolor="#f8fafc" style="background-color:#f8fafc;padding:24px 28px;border-top:1px solid #e2e8f0;border-radius:0 0 12px 12px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                <tr><td align="center" bgcolor="#1d4ed8" style="background-color:#1d4ed8;border-radius:8px;">
+                  <!--[if mso]>
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ticketUrl}}" style="height:48px;v-text-anchor:middle;width:250px;" arcsize="17%" stroke="f" fillcolor="#1d4ed8">
+                    <w:anchorlock/><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">Review Ticket</center>
+                  </v:roundrect>
+                  <![endif]-->
+                  <!--[if !mso]><!-->
+                  <a href="{{ticketUrl}}" target="_blank" style="display:inline-block;padding:15px 52px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:8px;background-color:#1d4ed8;">Review Ticket</a>
+                  <!--<![endif]-->
+                </td></tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- ============ FOOTER ============ -->
+    <tr>
+      <td class="sd-pad" style="padding:8px 16px 0 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef2f7;border-radius:12px;">
+          <tr>
+            <td style="padding:20px 24px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                <td width="40" valign="middle"><img src="cid:icon-mail" width="40" height="40" alt="" style="display:block;border:0;outline:none;text-decoration:none;width:40px;height:40px;" /></td>
+                <td valign="middle" style="padding-left:14px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#64748b;line-height:1.7;">
+                  This is an automated notification from the Service Desk.<br />Please do not reply to this email.
+                </td>
+              </tr></table>
+            </td>
+          </tr>
+        </table>
+        <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#94a3b8;text-align:center;padding:18px 0 6px 0;">&copy; ITSM Service Desk</div>
+      </td>
+    </tr>
+
+  </table>
+
+</td></tr>
+</table>
+</body>
+</html>

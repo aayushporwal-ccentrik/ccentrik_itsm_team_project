@@ -1,0 +1,66 @@
+{
+  "note": "cid -> file. Attach these with sendMail({ attachment: [...] }) or images render broken.",
+  "files": {
+    "ccentrikLogo": "app/images/ccentrik.png",
+    "_icons": "email-templates/modern-card/assets/<cid>.png"
+  },
+  "templates": {
+    "ticket-created": [
+      "ccentrikLogo",
+      "icon-mail",
+      "icon-type",
+      "icon-team",
+      "icon-status",
+      "icon-calendar",
+      "icon-user"
+    ],
+    "ticket-assigned": [
+      "ccentrikLogo",
+      "icon-mail",
+      "icon-type",
+      "icon-team",
+      "icon-status",
+      "icon-user",
+      "icon-assigned",
+      "icon-calendar"
+    ],
+    "customer-action": [
+      "ccentrikLogo",
+      "icon-mail",
+      "icon-status",
+      "icon-calendar"
+    ],
+    "solution-proposed": [
+      "ccentrikLogo",
+      "icon-mail",
+      "icon-status",
+      "icon-user",
+      "icon-team",
+      "icon-calendar"
+    ],
+    "confirmed": [
+      "ccentrikLogo",
+      "icon-mail",
+      "icon-check",
+      "icon-calendar",
+      "icon-team",
+      "icon-type"
+    ],
+    "closed": [
+      "ccentrikLogo",
+      "icon-mail",
+      "icon-check-gray",
+      "icon-calendar",
+      "icon-team",
+      "icon-type"
+    ],
+    "cancelled": [
+      "ccentrikLogo",
+      "icon-mail",
+      "icon-cross",
+      "icon-calendar",
+      "icon-team",
+      "icon-type"
+    ]
+  }
+}
