@@ -5,8 +5,9 @@ sap.ui.define([
   "sap/ui/model/FilterOperator",
   "sap/m/MessageToast",
   "itsm/ui/model/lookupValues",
-  "itsm/ui/model/formatter"
-], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, fetchLookup, formatter) {
+  "itsm/ui/model/formatter",
+  "sap/base/Log"
+], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, fetchLookup, formatter, Log) {
   "use strict";
 
   // The full pool of KPI tiles a user can choose from — exactly 6 are
@@ -232,19 +233,21 @@ sap.ui.define([
             tableTitle: that._sPendingTitle || "All Incidents"
           }), "dash");
           that._sPendingTitle = "";
+          return aTickets;
+        })
+        .catch(function (oError) {
+          // Only the read can land here — onInit already seeded zeroed
+          // tiles, so there is nothing to fall back to. Re-zeroing here
+          // would wipe counts that are already on screen.
+          Log.error("Could not load KPI tile data", oError);
+          return null;
+        })
+        .then(function (aTickets) {
+          // Rendering follow-ups, deliberately after the catch: a failure
+          // in here must not be mistaken for "the read returned nothing".
+          if (!aTickets) { return; }
           that._syncTileClasses();
           that._updateAssigneeOptions(aTickets);
-        })
-        .catch(function () {
-          // Request failed (e.g. backend/DB not reachable) — fall back to
-          // zeroed tiles instead of leaving the row permanently empty.
-          that.getView().setModel(new JSONModel({
-            tiles: that._buildTiles([]),
-            categoryData: [],
-            tableTitle: that._sPendingTitle || "All Incidents"
-          }), "dash");
-          that._sPendingTitle = "";
-          that._syncTileClasses();
         });
     },
 
@@ -335,6 +338,7 @@ sap.ui.define([
       if (!oHBox) { return; }
       oHBox.getItems().forEach(function (oWrap, i) {
         var oTile = oWrap.getItems()[0];
+        if (!oTile) { return; }
         var oCtx = oTile.getBindingContext("dash");
         oTile.addStyleClass("acc" + (i + 1));
         oTile.toggleStyleClass("kpiSel", !!(oCtx && oCtx.getProperty("selected")));
