@@ -34,5 +34,13 @@ service ITSMService {
     // roles = every role this user may switch to, for the header's role menu.
     function currentUser() returns { persona: String; userName: String; name: String; email: String; roles: many String; theme: { themeType: String; themeScope: String; primaryColor: String; secondaryColor: String; logo: String; newTicketBtnColor: String; newTicketBtnTextColor: String; formBtnColor: String; formBtnTextColor: String; }; };
 
+    // Reminder bell: whether it's clickable right now (cooldown check),
+    // and the action behind clicking it.
+    function reminderStatus(ticketID: String) returns { enabled: Boolean; nextAllowedAt: String; };
+    action sendReminder(ticketID: String) returns { sent: Boolean; ticketID: String; recipientType: String; };
+
+    // Daily digest — called by an SAP BTP Job Scheduler binding, not from the UI.
+    action runDailyPendingActionEmails() returns { completed: Boolean; };
+
 }
  

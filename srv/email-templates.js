@@ -91,5 +91,37 @@ module.exports = {
     buildConfirmationEmailTemplate,
     buildServiceGroupEmailTemplate,
     buildAssignmentEmailTemplate,
-    buildPasswordSetupEmailTemplate
+    buildPasswordSetupEmailTemplate,
+    buildEmail
 };
+
+ 
+function buildEmail(title, message, tickets) {
+    return `
+<div style="font-family: Arial; font-size: 14px; color: #333;">
+<h2>${title}</h2>
+<p>${message}</p>
+ 
+            <table style="border-collapse: collapse; width: 100%;">
+<tr>
+<th>Ticket</th>
+<th>Description</th>
+<th>Priority</th>
+<th>Status</th>
+</tr>
+ 
+                ${tickets.map(ticket => `
+<tr>
+<td>${ticket.ticketNumber || ticket.ticketID}</td>
+<td>${ticket.shortDescription || ""}</td>
+<td>${ticket.priority || ""}</td>
+<td>${ticket.status || ""}</td>
+</tr>
+                `).join("")}
+</table>
+ 
+            <p>Please log in to the ITSM application to action these tickets.</p>
+</div>
+    `;
+}
+ 

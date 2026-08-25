@@ -1,10 +1,18 @@
 const cds = require("@sap/cds");
 const { SELECT, INSERT, UPDATE } = cds.ql;
-const { buildConfirmationEmailTemplate, buildServiceGroupEmailTemplate, buildAssignmentEmailTemplate } = require("./email-templates");
+const { buildConfirmationEmailTemplate, buildServiceGroupEmailTemplate, buildAssignmentEmailTemplate, buildEmail } = require("./email-templates");
 const { transporter, sendEmailSafe } = require("./ticket-helpers");
 const { Ticket, IncidentForm, TicketLog } = cds.entities("itsm.transaction");
 const { TicketCounter, User, UserRole, Organization } = cds.entities("itsm.master");
 const { sendPasswordSetupEmail } = require("./auth");
+
+const reminderCooldown = {
+    CRITICAL: 2,
+    HIGH: 4,
+    MEDIUM: 8,
+    LOW: 24
+};
+
  
 // Prefix used in the ticket number, e.g. "INC-00001".
 const PREFIX_BY_TYPE = {
@@ -20,12 +28,17 @@ module.exports = cds.service.impl(function () {
   this.on("currentUser", onCurrentUser);
   this.on("ticketAction", onticketAction);
   this.on("sendPasswordSetup", onSendPasswordSetup);
+  this.on("reminderStatus", onReminderStatus);
+  this.on("sendReminder", onSendReminder);
+  this.on("runDailyPendingActionEmails", onRunDailyPendingActionEmails);
   this.before("CREATE", "Tickets", onBeforeCreateTicket);
   this.before("UPDATE", "Tickets", onBeforeUpdateTicket);
   this.before("UPDATE", "Organizations", onBeforeUpdateOrganization);
   this.before("CREATE", "Users", onBeforeCreateUser);
   this.after("CREATE", "Users", onAfterCreateUser);
+  this.after("READ", "Tickets", onAfterReadTickets);
 });
+
 
  
 async function onticketAction(req) {
@@ -707,5 +720,209 @@ async function generateTicketIdentifiers(sTicketType) {
  
   return { ticketID: sNumber, ticketNumber: sNumber };
 }
+
+
  
- 
+
+// Stamps each returned Ticket with reminderReady (a virtual field, see
+// schema.cds) so the frontend's reminder bell has a plain scalar boolean
+// to bind — a to-many composition like ticketLogs can't be used as a
+// scalar "part" in a UI5 property binding, OData v4's model refuses it.
+async function onAfterReadTickets(data) {
+    const aTickets = Array.isArray(data) ? data : (data ? [data] : []);
+    for (const ticket of aTickets) {
+        const status = await getReminderStatus(ticket.ticketID);
+        ticket.reminderReady = !!status.enabled;
+    }
+}
+
+// Decides whether the reminder bell is clickable for a ticket — rate
+// limited per priority (reminderCooldown) since the last time a reminder
+// was actually sent (found via TicketLog's own REMINDER-stage rows).
+async function getReminderStatus(ticketID) {
+    const ticket = await SELECT.one.from(Ticket).where({ ticketID });
+    if (!ticket) {
+        return { enabled: false };
+    }
+
+    const cooldownHours = reminderCooldown[ticket.priority] || 8;
+
+    const lastReminder = await SELECT.one.from(TicketLog)
+        .where({ ticketID, stage: "REMINDER" })
+        .orderBy({ receivedDt: "desc" });
+
+    if (!lastReminder) {
+        return { enabled: true };
+    }
+
+    const nextAllowedAt = new Date(lastReminder.receivedDt).getTime() + cooldownHours * 60 * 60 * 1000;
+
+    if (Date.now() < nextAllowedAt) {
+        return { enabled: false, nextAllowedAt: new Date(nextAllowedAt).toISOString() };
+    }
+
+    return { enabled: true };
+}
+
+async function onReminderStatus(req) {
+    return getReminderStatus(req.data.ticketID);
+}
+
+// Maps Ticket.pendingWith (a role label — "Service Group"/"Consultant"/
+// "Agent", set by onticketAction, never an email) to who should actually
+// receive an email right now. Shared by sendTicketReminder (the bell) and
+// runDailyPendingActionEmails (the daily digest) so both agree on who's
+// "pending" for a given ticket.
+async function getPendingRecipient(ticket) {
+    if (!ticket.pendingWith) {
+        return null;
+    }
+
+    if (ticket.pendingWith === "Service Group") {
+        const users = await SELECT.from(User).where({ role: "SERVICE_GROUP", isActive: true });
+        return { type: "ServiceGroup", emails: users.map(u => u.email).filter(Boolean) };
+    }
+
+    if (ticket.pendingWith === "Consultant") {
+        const consultant = ticket.messageProcessor
+            ? await SELECT.one.from(User).where({ userId: ticket.messageProcessor, isActive: true })
+            : null;
+        return { type: "Consultant", emails: consultant?.email ? [consultant.email] : [] };
+    }
+
+    // "Agent" — set after RESOLVED, waiting on the original requester.
+    if (ticket.pendingWith === "Agent") {
+        const requester = ticket.reportedBy
+            ? await SELECT.one.from(User).where({ userId: ticket.reportedBy, isActive: true })
+            : null;
+        return { type: "EndUser", emails: requester?.email ? [requester.email] : [] };
+    }
+
+    return null;
+}
+
+// Sent when someone clicks the bell — nudges whoever the ticket is
+// currently pending with, subject to the cooldown above.
+async function sendTicketReminder(ticketID, req) {
+    const ticket = await SELECT.one.from(Ticket).where({ ticketID });
+    if (!ticket) {
+        return req.error(404, "Ticket not found");
+    }
+
+    const recipient = await getPendingRecipient(ticket);
+    if (!recipient) {
+        return req.error(400, "No pending action for this ticket.");
+    }
+    if (!recipient.emails.length) {
+        return req.error(400, `No email address found for ${recipient.type}.`);
+    }
+
+    const reminderStatus = await getReminderStatus(ticketID);
+    if (!reminderStatus.enabled) {
+        return req.error(429, "Reminder cooldown is still active.");
+    }
+
+    const now = new Date();
+    const message = recipient.type === "ServiceGroup"
+        ? "This ticket is waiting for consultant assignment."
+        : "This ticket is waiting for your action.";
+
+    await sendEmailSafe(transporter, {
+        from: process.env.MAIL_FROM,
+        to: recipient.emails,
+        subject: `Reminder: Ticket ${ticket.ticketNumber || ticket.ticketID} is waiting for action`,
+        html: buildEmail("Reminder: Action Required", message, [ticket])
+    });
+
+    await INSERT.into(TicketLog).entries({
+        ticketID,
+        stage: "REMINDER",
+        status: "Sent",
+        userName: req.user?.id || null,
+        userEmail: recipient.emails.join(", "),
+        role: recipient.type,
+        receivedDt: now,
+        completionDt: now,
+        remarks: `Reminder sent to ${recipient.type}.`
+    });
+
+    return {
+        sent: true,
+        ticketID,
+        recipientType: recipient.type
+    };
+}
+
+async function onSendReminder(req) {
+    return sendTicketReminder(req.data.ticketID, req);
+}
+
+// Daily digest — meant to be called by an SAP BTP Job Scheduler binding.
+// No scheduling/time logic in here, just "send today's pending list".
+async function runDailyPendingActionEmails() {
+    const tickets = await SELECT.from(Ticket);
+    const pending = {};
+
+    for (const ticket of tickets) {
+
+        // A Draft never got pendingWith set (that only happens on SUBMIT) —
+        // remind the End User who created it to actually submit it.
+        if (ticket.status === "DRAFT") {
+            const user = await SELECT.one.from(User).where({ userId: ticket.reportedBy, isActive: true });
+            if (!user?.email) {
+                continue;
+            }
+
+            const key = `EndUser_${user.userId}`;
+            if (!pending[key]) {
+                pending[key] = { emails: [user.email], type: "EndUser", tickets: [] };
+            }
+            pending[key].tickets.push(ticket);
+            continue;
+        }
+
+        const recipient = await getPendingRecipient(ticket);
+        if (!recipient || !recipient.emails.length) {
+            continue;
+        }
+
+        // Service Group gets one shared email listing every ticket pending
+        // with the team, not one email per ticket.
+        if (recipient.type === "ServiceGroup") {
+            if (!pending.ServiceGroup) {
+                pending.ServiceGroup = { emails: recipient.emails, type: "ServiceGroup", tickets: [] };
+            }
+            pending.ServiceGroup.tickets.push(ticket);
+            continue;
+        }
+
+        const key = `${recipient.type}_${recipient.emails[0]}`;
+        if (!pending[key]) {
+            pending[key] = { emails: recipient.emails, type: recipient.type, tickets: [] };
+        }
+        pending[key].tickets.push(ticket);
+    }
+
+    for (const item of Object.values(pending)) {
+        if (!item.tickets.length) {
+            continue;
+        }
+
+        await sendEmailSafe(transporter, {
+            from: process.env.MAIL_FROM,
+            to: item.emails,
+            subject: `You have ${item.tickets.length} ticket(s) requiring action`,
+            html: buildEmail(
+                "Pending Tickets",
+                `You have ${item.tickets.length} ticket(s) requiring your action.`,
+                item.tickets
+            )
+        });
+    }
+
+    return { completed: true };
+}
+
+async function onRunDailyPendingActionEmails() {
+    return runDailyPendingActionEmails();
+}

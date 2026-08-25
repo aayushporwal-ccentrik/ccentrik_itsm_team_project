@@ -19,30 +19,13 @@
         <Title text="Service Desk Dashboard" class="appHeaderTitle"/>
       </contentMiddle>
       <contentRight>
-        <Avatar src="sap-icon://person-placeholder" displayShape="Circle" displaySize="XS" interactive="true"
+        <Avatar src="sap-icon://person-placeholder" displayShape="Circle" displaySize="XS"
                 tooltip="My Profile" press=".onShowProfile" class="headerAvatarBtn"/>
         <Button icon="sap-icon://account" tooltip="Account" type="Transparent" class="headerActionBtn" press=".onUserMenu"/>
         <Button icon="sap-icon://action-settings" tooltip="Choose which 6 KPI tiles to show" type="Transparent"
                 class="headerActionBtn" press=".onManageTiles"/>
       </contentRight>
     </Bar>
-
-    <!-- ===== My Profile ===== -->
-    <Popover id="profilePopover" title="My Profile" placement="Bottom" contentWidth="18rem">
-      <VBox class="sapUiSmallMargin">
-        <HBox alignItems="Center" class="sapUiSmallMarginBottom">
-          <core:Icon src="sap-icon://person-placeholder" size="2rem" class="sapUiSmallMarginEnd"/>
-          <VBox>
-            <Text text="{profile>/name}" class="profileName"/>
-            <Text text="{profile>/roleLabel}" class="profileRole"/>
-          </VBox>
-        </HBox>
-        <ObjectAttribute title="Username" text="{profile>/userId}"/>
-        <ObjectAttribute title="Email" text="{profile>/email}" visible="{= !!${profile>/email} }"/>
-        <ObjectAttribute title="Organization" text="{profile>/organization}" visible="{= !!${profile>/organization} }"/>
-        <ObjectAttribute title="Status" text="{= ${profile>/isActive} ? 'Active' : 'Inactive' }"/>
-      </VBox>
-    </Popover>
 
     <!-- ===== New Ticket: pick the ticket type before the form opens —
          it's fixed for the ticket after this, not editable in the form. ===== -->
@@ -154,6 +137,7 @@
             <Column width="9rem" visible="{= ${role>/persona} === 'SERVICE_GROUP' }"><Text text="Client"/></Column>
             <Column width="9rem"><Text text="Assigned To"/></Column>
             <Column width="9rem"><Text text="Created On"/></Column>
+            <Column width="3rem"/>
           </columns>
 
           <items>
@@ -170,6 +154,19 @@
                 <Text text="{path: 'reportedByUser/client', formatter: '.formatClientName'}"/>
                 <Text text="{messageProcessor}"/>
                 <Text text="{path: 'createdAt', formatter: '.formatDateTime'}"/>
+                <!-- Last cell — renders just before the row's own Navigation
+                     arrow. A Button here captures its own click, so it
+                     doesn't also trigger onTicketPress underneath it. Always
+                     shown for an active ticket; color + clickability track
+                     reminderReady, a plain scalar computed server-side
+                     (srv/service.js onAfterReadTickets) — ticketLogs itself
+                     is a to-many composition and can't be bound as a
+                     scalar property here, OData v4 refuses it outright. -->
+                <Button icon="sap-icon://bell" type="Transparent" tooltip="Send a reminder"
+                        visible="{path: 'status', formatter: '.formatReminderVisible'}"
+                        enabled="{reminderReady}"
+                        class="{path: 'reminderReady', formatter: '.formatReminderClass'}"
+                        press=".onTableReminder"/>
               </cells>
             </ColumnListItem>
           </items>

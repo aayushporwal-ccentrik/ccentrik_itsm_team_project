@@ -23,5 +23,10 @@ docs/btp-troubleshooting-log.md
 # @cap-js/cds-typer
 @cds-models
 
-# Local secrets (JWT_SECRET, SMTP_*)
+# Local secrets — never commit
 .env
+
+# Generated documentation (kept locally, not in the repo)
+docs/ccentrik-itsm-field-manual.html
+docs/ccentrik-itsm-field-manual.docx
+docs/build-work-zone-requirements.md

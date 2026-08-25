@@ -22,7 +22,7 @@
           <!-- The logo file is white on transparent, made for the app's navy
                header. This panel is light, so it's flipped to dark with a CSS
                filter (see .authHeroLogo) rather than shipping a second file. -->
-          <Image src="images/ccentrik.png" height="26px" densityAware="false" class="authHeroLogo"/>
+          <Image src="images/ccentrik.png" height="45px" densityAware="false" class="authHeroLogo"/>
           <VBox class="authHeroBrandRule"/>
           <Text text="ITSM" class="authHeroKicker"/>
         </HBox>

@@ -136,7 +136,11 @@ sap.ui.define([], function () {
           + "</div>";
       }
 
-      return ""
+      // sap.ui.core.HTML's "content" only supports a single root element —
+      // two sibling top-level divs (the window + the form-buttons card
+      // below) confused its DOM-node tracking on re-render, duplicating
+      // the whole thing on every property change instead of replacing it.
+      return "<div class=\"themePreviewRoot\">"
         + "<div class=\"themePreviewWindow\" style=\"box-shadow:0 0 0 1px rgba(15,23,42,.06), 0 20px 40px -12px " + sGlow + ";\">"
         +   "<div class=\"themePreviewChrome\">"
         +     "<span class=\"themePreviewDots\">"
@@ -182,6 +186,7 @@ sap.ui.define([], function () {
         +     "<span class=\"themePreviewBtn\" style=\"background:" + sFormFill + ";color:" + sFormTextC + ";\">Save</span>"
         +     "<span class=\"themePreviewBtn\" style=\"background:" + sFormFill + ";color:" + sFormTextC + ";\">Submit</span>"
         +   "</div>"
+        + "</div>"
         + "</div>";
     }
   };

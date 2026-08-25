@@ -42,6 +42,13 @@ context transaction {
  
         ticketLogs : Composition of many TicketLog
             on ticketLogs.ticketID = $self.ticketID;
+
+        // Computed at read time (see srv/service.js), not persisted — a
+        // to-many composition like ticketLogs can't be used as a scalar
+        // "part" in a UI5 property binding (OData v4's model refuses it,
+        // "Accessed value is not primitive"), so the reminder bell's
+        // enabled/color state needs a real scalar field to bind to.
+        virtual reminderReady : Boolean;
     }
  
     entity IncidentForm : cuid {
@@ -178,7 +185,4 @@ context master {
         isActive : Boolean;
     }
 }
- 
- 
- 
  
