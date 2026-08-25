@@ -27,6 +27,7 @@
           <core:Item key="{ops>code}" text="{ops>name}"/>
         </Select>
         <Button text="View Tickets" icon="sap-icon://menu2" class="submitBtn" press=".onGoTickets"/>
+        <Button icon="sap-icon://account" tooltip="Account" type="Transparent" class="headerActionBtn" press=".onUserMenu"/>
       </contentRight>
     </Bar>
 

@@ -60,7 +60,7 @@
           "synchronizationMode": "None",
           "operationMode": "Server",
           "autoExpandSelect": true,
-          "earlyRequests": true,
+          "earlyRequests": false,
           "groupId": "$auto",
           "updateGroupId": "incidentGroup"
         }
@@ -79,6 +79,10 @@
         "async": true
       },
       "routes": [
+  { "pattern": "login", "name": "login", "target": "login" },
+  { "pattern": "forgot-password", "name": "forgotPassword", "target": "login" },
+  { "pattern": "reset-password/{token}", "name": "resetPassword", "target": "login" },
+  { "pattern": "select-role", "name": "selectRole", "target": "selectRole" },
   { "pattern": "", "name": "dashboard", "target": "dashboard" },
   { "pattern": "service-group-dashboard", "name": "serviceGroupDashboard", "target": "serviceGroupDashboard" },
   { "pattern": "create", "name": "create", "target": "main" },
@@ -88,6 +92,8 @@
   { "pattern": "organizations/{id}", "name": "organizationDetail", "target": "organizationDetail" }
 ],
 "targets": {
+  "login": { "viewName": "Login", "viewId": "login" },
+  "selectRole": { "viewName": "RoleSelection", "viewId": "selectRole" },
   "dashboard": { "viewName": "Dashboard", "viewId": "dashboard" },
   "serviceGroupDashboard": { "viewName": "ServiceGroupDashboard", "viewId": "serviceGroupDashboard" },
   "main": { "viewName": "Main", "viewId": "main" },

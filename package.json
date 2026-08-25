@@ -6,6 +6,8 @@
     "@cap-js/postgres": "^2",
     "@sap/cds": "^9",
     "@sap/xssec": "^4",
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
     "nodemailer": "^9.0.5"
   },
   "devDependencies": {
@@ -27,67 +29,7 @@
         }
       },
       "auth": {
-        "kind": "mocked",
-        "users": {
-          "sachin": {
-            "password": "sachin123",
-            "roles": [
-              "ServiceGroup"
-            ]
-          },
-          "aayush": {
-            "password": "aayush123",
-            "roles": [
-              "Consultant"
-            ]
-          },
-          "virat": {
-            "password": "virat123",
-            "roles": [
-              "EndUser"
-            ]
-          },
-          "sarthak": {
-            "password": "sarthak123",
-            "roles": [
-              "ServiceGroup"
-            ]
-          },
-          "jatin": {
-            "password": "jatin123",
-            "roles": [
-              "Consultant"
-            ]
-          },
-          "punit": {
-            "password": "punit123",
-            "roles": [
-              "EndUser"
-            ]
-          },
-          "dev": {
-            "password": "dev123",
-            "roles": [
-              "EndUser"
-            ]
-          },
-
-          "kirpal": {
-            "password": "kirpal123",
-            "roles": [
-              "EndUser"
-            ]
-          },
-          "admin": {
-            "password": "admin123",
-            "roles": [
-              "Admin"
-            ]
-          }
-        }
-      },
-      "[production]": {
-        "auth": "xsuaa"
+        "impl": "srv/auth.js"
       },
       "[hybrid]": {
         "db": "hana"

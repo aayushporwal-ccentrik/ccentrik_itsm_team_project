@@ -4,11 +4,16 @@ sap.ui.define([
   "sap/ui/model/Filter",
   "sap/ui/model/FilterOperator",
   "itsm/ui/model/lookupValues",
-  "itsm/ui/model/formatter"
-], function (Controller, JSONModel, Filter, FilterOperator, fetchLookup, formatter) {
+  "itsm/ui/model/formatter",
+  "itsm/ui/model/userMenu"
+], function (Controller, JSONModel, Filter, FilterOperator, fetchLookup, formatter, userMenu) {
   "use strict";
 
   return Controller.extend("itsm.ui.controller.AssignedTickets", {
+    // Header account popover: current role, role switch, logout.
+    onUserMenu: function (oEvent) {
+      userMenu.open(this, oEvent.getSource());
+    },
 
     formatDateTime: formatter.formatDateTime,
 

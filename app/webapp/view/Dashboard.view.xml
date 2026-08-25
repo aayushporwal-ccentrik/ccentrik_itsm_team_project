@@ -21,6 +21,7 @@
       <contentRight>
         <Avatar src="sap-icon://person-placeholder" displayShape="Circle" displaySize="XS" interactive="true"
                 tooltip="My Profile" press=".onShowProfile" class="headerAvatarBtn"/>
+        <Button icon="sap-icon://account" tooltip="Account" type="Transparent" class="headerActionBtn" press=".onUserMenu"/>
         <Button icon="sap-icon://action-settings" tooltip="Choose which 6 KPI tiles to show" type="Transparent"
                 class="headerActionBtn" press=".onManageTiles"/>
       </contentRight>

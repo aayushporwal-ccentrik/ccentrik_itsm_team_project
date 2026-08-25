@@ -14,6 +14,9 @@
       <contentMiddle>
         <Title text="Platform Administration" class="appHeaderTitle"/>
       </contentMiddle>
+      <contentRight>
+        <Button icon="sap-icon://account" tooltip="Account" type="Transparent" class="headerActionBtn" press=".onUserMenu"/>
+      </contentRight>
     </Bar>
 
     <VBox class="sectionCard">

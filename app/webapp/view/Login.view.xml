@@ -1,0 +1,284 @@
+<mvc:View
+  controllerName="itsm.ui.controller.Login"
+  xmlns="sap.m"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:core="sap.ui.core"
+  displayBlock="true">
+
+  <Page showHeader="false" backgroundDesign="Transparent" class="authSplitPage">
+
+    <!-- Branding panel on the left, form on the right (see .authSplit in
+         css/style.css). One view serves all three auth routes — the login,
+         forgot-password and reset-password blocks below swap in and out,
+         same idea as Main.view.xml serving both "create" and "detail". -->
+    <HBox class="authSplit" wrap="Wrap">
+
+      <!-- Branding panel. Takes 70% of the width; decoration only, so
+           css/style.css hides it below 1100px and the form gets the whole
+           window. -->
+      <VBox class="authHero" justifyContent="SpaceBetween">
+
+        <HBox class="authHeroBrand" alignItems="Center">
+          <!-- The logo file is white on transparent, made for the app's navy
+               header. This panel is light, so it's flipped to dark with a CSS
+               filter (see .authHeroLogo) rather than shipping a second file. -->
+          <Image src="images/ccentrik.png" height="26px" densityAware="false" class="authHeroLogo"/>
+          <VBox class="authHeroBrandRule"/>
+          <Text text="ITSM" class="authHeroKicker"/>
+        </HBox>
+
+        <HBox class="authHeroMain" alignItems="Center" wrap="Wrap">
+
+          <VBox class="authHeroCopy">
+            <Title text="Manage every IT request" level="H1" wrapping="true" class="authHeroTitle"/>
+            <Title text="from one place." level="H1" wrapping="true" class="authHeroTitle authHeroTitleAccent"/>
+            <Text text="A unified service desk to create, assign, monitor, and resolve tickets efficiently." class="authHeroText"/>
+
+            <VBox class="authHeroList">
+              <HBox alignItems="Center" class="authHeroListItem">
+                <VBox class="authHeroTile" justifyContent="Center" alignItems="Center">
+                  <core:Icon src="sap-icon://activity-items"/>
+                </VBox>
+                <Text text="Full ticket lifecycle control"/>
+              </HBox>
+              <HBox alignItems="Center" class="authHeroListItem">
+                <VBox class="authHeroTile" justifyContent="Center" alignItems="Center">
+                  <core:Icon src="sap-icon://group"/>
+                </VBox>
+                <Text text="Role-based access"/>
+              </HBox>
+              <HBox alignItems="Center" class="authHeroListItem">
+                <VBox class="authHeroTile" justifyContent="Center" alignItems="Center">
+                  <core:Icon src="sap-icon://building"/>
+                </VBox>
+                <Text text="Manage teams, consultants and customers"/>
+              </HBox>
+            </VBox>
+          </VBox>
+
+          <!-- Laptop mockup. Pure markup + CSS, no screenshot asset to keep in
+               sync with the real dashboard. -->
+          <VBox class="authHeroArt">
+            <VBox class="mockLaptop">
+              <VBox class="mockScreen">
+                <VBox class="mockUi">
+
+                  <Text text="Dashboard" class="mockUiTitle"/>
+
+                  <HBox class="mockKpiRow">
+                    <VBox class="mockKpi">
+                      <Text text="New" class="mockKpiLabel"/>
+                      <Text text="94" class="mockKpiValue mockBlue"/>
+                    </VBox>
+                    <VBox class="mockKpi">
+                      <Text text="In-Progress" class="mockKpiLabel"/>
+                      <Text text="146" class="mockKpiValue mockAmber"/>
+                    </VBox>
+                    <VBox class="mockKpi">
+                      <Text text="Resolved" class="mockKpiLabel"/>
+                      <Text text="278" class="mockKpiValue mockGreen"/>
+                    </VBox>
+                    <VBox class="mockKpi">
+                      <Text text="Overdue" class="mockKpiLabel"/>
+                      <Text text="12" class="mockKpiValue mockRed"/>
+                    </VBox>
+                  </HBox>
+
+                  <HBox class="mockSplit">
+
+                    <VBox class="mockCard mockCycle">
+                      <HBox class="mockCycleRow">
+                        <VBox class="mockCycleItem" alignItems="Center">
+                          <VBox class="mockDot mockDotGreen" justifyContent="Center" alignItems="Center">
+                            <core:Icon src="sap-icon://add-document"/>
+                          </VBox>
+                          <Text text="Create"/>
+                        </VBox>
+                        <VBox class="mockCycleItem" alignItems="Center">
+                          <VBox class="mockDot mockDotBlue" justifyContent="Center" alignItems="Center">
+                            <core:Icon src="sap-icon://add-employee"/>
+                          </VBox>
+                          <Text text="Assign"/>
+                        </VBox>
+                      </HBox>
+                      <HBox class="mockCycleRow">
+                        <VBox class="mockCycleItem" alignItems="Center">
+                          <VBox class="mockDot mockDotAmber" justifyContent="Center" alignItems="Center">
+                            <core:Icon src="sap-icon://show"/>
+                          </VBox>
+                          <Text text="Track"/>
+                        </VBox>
+                        <VBox class="mockCycleItem" alignItems="Center">
+                          <VBox class="mockDot mockDotGreen" justifyContent="Center" alignItems="Center">
+                            <core:Icon src="sap-icon://accept"/>
+                          </VBox>
+                          <Text text="Resolve"/>
+                        </VBox>
+                      </HBox>
+                    </VBox>
+
+                    <VBox class="mockCard mockList">
+                      <Text text="Recent Tickets" class="mockListTitle"/>
+
+                      <HBox class="mockRow" alignItems="Center">
+                        <VBox class="mockCheck"/>
+                        <VBox class="mockBar"/>
+                        <Text text="Open" class="mockPill mockPillAmber"/>
+                      </HBox>
+                      <HBox class="mockRow" alignItems="Center">
+                        <VBox class="mockCheck"/>
+                        <VBox class="mockBar"/>
+                        <Text text="In-Progress" class="mockPill mockPillBlue"/>
+                      </HBox>
+                      <HBox class="mockRow" alignItems="Center">
+                        <VBox class="mockCheck"/>
+                        <VBox class="mockBar"/>
+                        <Text text="Assigned" class="mockPill mockPillGreen"/>
+                      </HBox>
+                      <HBox class="mockRow" alignItems="Center">
+                        <VBox class="mockCheck"/>
+                        <VBox class="mockBar"/>
+                        <Text text="Resolved" class="mockPill mockPillGreen"/>
+                      </HBox>
+                    </VBox>
+
+                  </HBox>
+
+                </VBox>
+              </VBox>
+
+              <VBox class="mockLaptopBase"/>
+            </VBox>
+          </VBox>
+
+        </HBox>
+
+        <Text text="© 2026 ccentrik. All rights reserved." class="authHeroFoot"/>
+
+      </VBox>
+
+      <VBox class="authFormPane" justifyContent="Center">
+        <VBox class="authForm">
+
+          <!-- ===== Sign in (route: login) ===== -->
+          <VBox id="loginBlock">
+            <Title text="Sign In" level="H2" class="authFormTitle"/>
+            <Text text="Sign in to access the service desk" class="authFormSubtitle"/>
+
+            <MessageStrip
+              id="loginError"
+              type="Error"
+              showIcon="true"
+              visible="false"
+              class="authMessage"/>
+
+            <Label text="Email" labelFor="loginEmail" class="authFieldLabel"/>
+            <Input
+              id="loginEmail"
+              type="Email"
+              placeholder="you@ccentrik.com"
+              submit=".onLogin"
+              class="authInput"/>
+
+            <Label text="Password" labelFor="loginPassword" class="authFieldLabel"/>
+            <Input
+              id="loginPassword"
+              type="Password"
+              placeholder="Enter your password"
+              submit=".onLogin"
+              class="authInput"/>
+
+            <Link
+              text="Forgot Password?"
+              press=".onForgotPassword"
+              class="authLink"/>
+
+            <Button
+              id="loginButton"
+              text="Sign In"
+              type="Emphasized"
+              width="100%"
+              press=".onLogin"
+              class="formActionBtn authButton"/>
+          </VBox>
+
+          <!-- ===== Forgot password (route: forgotPassword) ===== -->
+          <VBox id="forgotBlock" visible="false">
+            <Title text="Forgot Password" level="H2" class="authFormTitle"/>
+            <Text text="Enter your registered email address." class="authFormSubtitle"/>
+
+            <MessageStrip
+              id="forgotMessage"
+              type="Information"
+              showIcon="true"
+              visible="false"
+              class="authMessage"/>
+
+            <Label text="Email" labelFor="forgotEmail" class="authFieldLabel"/>
+            <Input
+              id="forgotEmail"
+              type="Email"
+              placeholder="you@ccentrik.com"
+              submit=".onSendResetLink"
+              class="authInput"/>
+
+            <Button
+              id="forgotButton"
+              text="Send Reset Link"
+              type="Emphasized"
+              width="100%"
+              press=".onSendResetLink"
+              class="formActionBtn authButton"/>
+
+            <Link text="Back to Login" press=".onBackToLogin" class="authLink"/>
+          </VBox>
+
+          <!-- ===== Reset password (route: resetPassword) ===== -->
+          <VBox id="resetBlock" visible="false">
+            <Title text="Reset Password" level="H2" class="authFormTitle"/>
+            <Text text="Choose a password of at least 8 characters." class="authFormSubtitle"/>
+
+            <MessageStrip
+              id="resetMessage"
+              type="Error"
+              showIcon="true"
+              visible="false"
+              class="authMessage"/>
+
+            <!-- Hidden once the reset succeeds, so the only thing left is the
+                 confirmation and the Go To Login button. -->
+            <VBox id="resetForm">
+              <Label text="New Password" labelFor="newPassword" class="authFieldLabel"/>
+              <Input id="newPassword" type="Password" submit=".onResetPassword" class="authInput"/>
+
+              <Label text="Confirm Password" labelFor="confirmPassword" class="authFieldLabel"/>
+              <Input id="confirmPassword" type="Password" submit=".onResetPassword" class="authInput"/>
+
+              <Button
+                id="resetButton"
+                text="Reset Password"
+                type="Emphasized"
+                width="100%"
+                press=".onResetPassword"
+                class="formActionBtn authButton"/>
+            </VBox>
+
+            <Button
+              id="goToLoginButton"
+              text="Go To Login"
+              type="Emphasized"
+              width="100%"
+              visible="false"
+              press=".onBackToLogin"
+              class="formActionBtn authButton"/>
+
+            <Link id="backToLoginLink" text="Back to Login" press=".onBackToLogin" class="authLink"/>
+          </VBox>
+
+        </VBox>
+      </VBox>
+
+    </HBox>
+
+  </Page>
+</mvc:View>

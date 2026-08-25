@@ -863,3 +863,209 @@ html[data-theme-scope="background"] .sapMITBSelected .sapMITBText { color: var(-
   padding: 3px 0;
 }
 .themePreviewCatDot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+/* =========================================================
+   Login / Forgot Password / Reset Password — split screen
+   70% branding panel on the left, 30% form on the right. The panel is
+   decoration only, so it drops away on narrow screens.
+   ========================================================= */
+
+/* sap.m.Page wraps its content in a scrolling <section> that carries its
+   own padding and a fixed background — both have to go, or the two panels
+   sit inside a white gutter instead of reaching the window edges. */
+.authSplitPage > section {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.authSplit {
+  width: 100%;
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+/* ---- left: branding, 70% ---- */
+.authHero {
+  flex: 1 1 70%;
+  min-width: 0;
+  padding: 34px 48px 26px;
+  background: #f4f6fd;
+  /* soft off-centre glow, same idea as the reference's pale blob */
+  background-image: radial-gradient(circle at 62% 46%, #ffffff 0%, rgba(255,255,255,0) 58%);
+}
+
+.authHeroBrand { flex: none; gap: 12px; }
+/* White-on-transparent logo flipped to dark for this light panel. Alpha is
+   untouched by invert(), so the transparent background stays transparent. */
+.authHeroLogo { filter: invert(1) brightness(.28); }
+.authHeroBrandRule { width: 1px; height: 20px; background: #c7d0e8; flex: none; }
+.authHeroKicker {
+  color: #2f57d8 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: .16em;
+}
+
+.authHeroMain { flex: 1 1 auto; gap: 40px; padding: 20px 0; }
+.authHeroCopy { flex: 1 1 340px; min-width: 0; max-width: 460px; }
+
+.authHeroTitle {
+  color: #0d1b3e !important;
+  font-size: 42px !important;
+  font-weight: 800 !important;
+  line-height: 1.14 !important;
+  letter-spacing: -.02em;
+}
+.authHeroTitleAccent { color: #2f57d8 !important; margin-bottom: 18px; }
+.authHeroText { color: #667085 !important; font-size: 16px !important; line-height: 1.6 !important; }
+
+.authHeroList { gap: 18px; margin-top: 34px; }
+.authHeroListItem { gap: 14px; }
+.authHeroListItem .sapMText { color: #344054 !important; font-size: 15px !important; }
+.authHeroTile {
+  flex: none;
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  background: #e6ecfb;
+}
+.authHeroTile .sapUiIcon { color: #2f57d8 !important; font-size: 1.05rem !important; }
+
+.authHeroFoot { flex: none; color: #98a2b3 !important; font-size: 12.5px !important; }
+
+/* ---- the laptop mockup ---- */
+.authHeroArt { flex: 1 1 420px; min-width: 0; max-width: 620px; }
+.mockLaptop { width: 100%; }
+.mockScreen {
+  background: #131a2e;
+  border-radius: 14px 14px 4px 4px;
+  padding: 12px 12px 10px;
+  box-shadow: 0 22px 44px rgba(16,24,64,.18);
+}
+.mockUi { background: #fff; border-radius: 8px; padding: 14px; gap: 12px; }
+.mockUiTitle { color: #0d1b3e !important; font-size: 15px !important; font-weight: 800 !important; }
+
+.mockKpiRow { gap: 9px; }
+.mockKpi {
+  flex: 1 1 0; min-width: 0;
+  border: 1px solid #e7ebf5;
+  border-radius: 8px;
+  padding: 9px 11px;
+}
+.mockKpiLabel { color: #667085 !important; font-size: 10.5px !important; }
+.mockKpiValue { font-size: 22px !important; font-weight: 800 !important; line-height: 1.2 !important; }
+.mockBlue  { color: #2f57d8 !important; }
+.mockAmber { color: #f59e0b !important; }
+.mockGreen { color: #16a34a !important; }
+.mockRed   { color: #ef4444 !important; }
+
+.mockSplit { gap: 9px; align-items: stretch; }
+.mockCard { border: 1px solid #e7ebf5; border-radius: 8px; padding: 11px; }
+.mockCycle { flex: 0 0 38%; min-width: 0; gap: 14px; justify-content: center; }
+.mockCycleRow { gap: 8px; }
+.mockCycleItem { flex: 1 1 0; min-width: 0; gap: 5px; }
+.mockCycleItem .sapMText { color: #667085 !important; font-size: 10px !important; }
+.mockDot { width: 30px; height: 30px; border-radius: 50%; flex: none; }
+.mockDot .sapUiIcon { color: #fff !important; font-size: .8rem !important; }
+.mockDotGreen { background: #16a34a; }
+.mockDotBlue  { background: #2f57d8; }
+.mockDotAmber { background: #f59e0b; }
+
+.mockList { flex: 1 1 0; min-width: 0; gap: 8px; }
+.mockListTitle { color: #0d1b3e !important; font-size: 11.5px !important; font-weight: 700 !important; }
+.mockRow { gap: 8px; }
+.mockCheck { width: 12px; height: 12px; border-radius: 3px; background: #e7ebf5; flex: none; }
+/* the grey placeholder line standing in for a ticket subject */
+.mockBar { flex: 1 1 auto; height: 7px; border-radius: 4px; background: #eef1f8; }
+.mockPill {
+  flex: none;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+}
+.mockPillAmber { background: #fef3c7; color: #b45309 !important; }
+.mockPillBlue  { background: #dbeafe; color: #1d4ed8 !important; }
+.mockPillGreen { background: #dcfce7; color: #15803d !important; }
+
+.mockLaptopBase {
+  height: 11px;
+  margin: 0 -6%;
+  border-radius: 0 0 10px 10px;
+  background: linear-gradient(180deg, #263049 0%, #131a2e 100%);
+}
+
+/* ---- right: the form, 30% ---- */
+.authFormPane {
+  flex: 0 0 clamp(360px, 30%, 520px);
+  min-width: 0;
+  background: #fff;
+  padding: 44px 40px;
+  border-left: 1px solid #e7ebf5;
+}
+.authForm { width: 100%; max-width: 340px; margin: 0 auto; }
+.authFormTitle {
+  color: #0d1b3e !important;
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  letter-spacing: -.01em;
+}
+.authFormSubtitle { color: #667085 !important; font-size: 14px !important; margin-top: 4px; }
+
+.authMessage { margin-top: 22px; }
+.authFieldLabel { margin-top: 22px; margin-bottom: 7px; }
+.authFieldLabel .sapMLabel { color: #101828 !important; font-size: 13.5px !important; font-weight: 600 !important; }
+
+/* Taller, rounder inputs than the app's dense form fields — this page has
+   two fields and all the room in the world. */
+.authInput .sapMInputBaseInner { height: 44px !important; font-size: 15px !important; padding: 0 14px !important; }
+.authInput .sapMInputBaseContentWrapper {
+  height: 44px !important;
+  border-radius: 10px !important;
+  border: 1px solid #d0d5dd !important;
+}
+.authInput .sapMInputBaseContentWrapper:hover { border-color: #98a2b3 !important; }
+.authInput .sapMFocus .sapMInputBaseContentWrapper,
+.authInput:focus-within .sapMInputBaseContentWrapper { border-color: #101828 !important; border-width: 2px !important; }
+
+.authLink { display: block; margin-top: 12px; font-size: 13px; }
+.authButton { margin-top: 22px; }
+.authButton .sapMBtnInner { height: 46px !important; border-radius: 10px !important; }
+.authButton .sapMBtnContent, .authButton bdi { font-size: 15px !important; font-weight: 600 !important; }
+
+/* Laptop needs real width to read — below this it stacks under the copy,
+   and below 1100px the whole panel goes and the form takes the window. */
+@media (max-width: 1400px) {
+  .authHeroTitle { font-size: 34px !important; }
+  .authHeroArt { flex-basis: 100%; max-width: 520px; }
+}
+@media (max-width: 1100px) {
+  .authHero { display: none !important; }
+  .authFormPane { flex: 1 1 100%; border-left: none; }
+}
+
+/* =========================================================
+   Role Selection
+   ========================================================= */
+.roleWelcome { color: #1e2a5e !important; font-weight: 800 !important; margin-bottom: 4px; }
+.roleSectionPill { margin-top: 18px; }
+.authSubtitle { color: #6b7280; font-size: 13px; }
+
+/* Three tiles across on desktop, wrapping to two and then one — flex-basis
+   plus wrap, no fixed positioning or media queries needed. */
+.roleTileRow { gap: 16px; margin-bottom: 8px; }
+.roleTile {
+  flex: 1 1 260px;
+  min-width: 0;
+  max-width: 340px;
+  background: #f8faff;
+  border: 1px solid #dbe4ff;
+  border-radius: 14px;
+  padding: 20px 18px;
+  gap: 6px;
+}
+.roleTileIcon { color: var(--brand-accent-on-white, #021a86) !important; margin-bottom: 6px; }
+.roleTileTitle { color: #1e2a5e !important; font-weight: 800 !important; text-transform: uppercase; }
+.roleTileText { color: #6b7280; font-size: 13px; min-height: 40px; }
+.roleTileButton { margin-top: 12px; }
+
+.userMenuPill { margin: 4px 16px 0; }
+.userMenuLogout { margin: 6px 0 4px; }

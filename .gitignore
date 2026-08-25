@@ -22,3 +22,6 @@ docs/btp-troubleshooting-log.md
 
 # @cap-js/cds-typer
 @cds-models
+
+# Local secrets (JWT_SECRET, SMTP_*)
+.env

@@ -1,10 +1,10 @@
 const cds = require("@sap/cds");
 const { SELECT, INSERT, UPDATE } = cds.ql;
-const nodemailer = require("nodemailer");
 const { buildConfirmationEmailTemplate, buildServiceGroupEmailTemplate, buildAssignmentEmailTemplate } = require("./email-templates");
-const { sendEmailSafe } = require("./ticket-helpers");
+const { transporter, sendEmailSafe } = require("./ticket-helpers");
 const { Ticket, IncidentForm, TicketLog } = cds.entities("itsm.transaction");
-const { TicketCounter, User, Organization } = cds.entities("itsm.master");
+const { TicketCounter, User, UserRole, Organization } = cds.entities("itsm.master");
+const { sendPasswordSetupEmail } = require("./auth");
  
 // Prefix used in the ticket number, e.g. "INC-00001".
 const PREFIX_BY_TYPE = {
@@ -14,23 +14,17 @@ const PREFIX_BY_TYPE = {
   PROBLEM: "PRB"
 };
  
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: true,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
-});
 module.exports = cds.service.impl(function () {
   "use strict";
- 
+
   this.on("currentUser", onCurrentUser);
   this.on("ticketAction", onticketAction);
+  this.on("sendPasswordSetup", onSendPasswordSetup);
   this.before("CREATE", "Tickets", onBeforeCreateTicket);
   this.before("UPDATE", "Tickets", onBeforeUpdateTicket);
   this.before("UPDATE", "Organizations", onBeforeUpdateOrganization);
+  this.before("CREATE", "Users", onBeforeCreateUser);
+  this.after("CREATE", "Users", onAfterCreateUser);
 });
 
  
@@ -341,7 +335,7 @@ async function onticketAction(req) {
                 UPDATE(Ticket)
                     .set({
                         messageProcessor: consultant.userId,
-                        pendingWith: "Consultant",
+                        pendingWith: consultant.email,
                         pendingWithName: consultant.name,
                         status: "ASSIGNED",
                         subStatus: "IN_PROGRESS",
@@ -579,8 +573,56 @@ async function onCurrentUser(req) {
   if (req.user.is("Admin")) { sPersona = "ADMIN"; }
   else if (req.user.is("Consultant")) { sPersona = "CONSULTANT"; }
   else if (req.user.is("ServiceGroup")) { sPersona = "SERVICE_GROUP"; }
- 
-  return { persona: sPersona, userName: req.user.id, theme: await resolveUserTheme(req.user.id) };
+
+  const oUser = await SELECT.one.from(User).where({ userId: req.user.id });
+
+  return {
+    persona: sPersona,
+    userName: req.user.id,
+    name: oUser?.name || req.user.id,
+    email: oUser?.email || req.user.email,
+    // Straight off the verified token — the header's role menu offers
+    // exactly these, and /auth/select-role re-checks against the DB anyway.
+    roles: req.user.roleCodes || [],
+    theme: await resolveUserTheme(req.user.id)
+  };
+}
+
+// Login matches on email, so it has to be stored one consistent way.
+function onBeforeCreateUser(req) {
+  if (req.data.email) { req.data.email = req.data.email.trim().toLowerCase(); }
+  if (!req.data.userId) { req.data.userId = req.data.email; }
+}
+
+// A new user has no password. Give them their primary role and mail them a
+// setup link — the admin never sees or sets the password.
+async function onAfterCreateUser(oUser, req) {
+  if (!oUser.userId) { return; }
+
+  if (oUser.role) {
+    const existing = await SELECT.one.from(UserRole).where({ userId: oUser.userId, role: oUser.role });
+    if (!existing) {
+      await INSERT.into(UserRole).entries({ userId: oUser.userId, role: oUser.role });
+    }
+  }
+
+  if (oUser.email) {
+    await sendPasswordSetupEmail(oUser, false);
+  }
+}
+
+async function onSendPasswordSetup(req) {
+  if (!req.user.is("Admin")) {
+    return req.error(403, "Admin role required");
+  }
+
+  const oUser = await SELECT.one.from(User).where({ userId: req.data.userId });
+  if (!oUser || !oUser.email) {
+    return req.error(404, "User not found");
+  }
+
+  await sendPasswordSetupEmail(oUser, false);
+  return `Password setup link sent to ${oUser.email}.`;
 }
 async function resolveUserTheme(sUserId) {
   const oUser = await SELECT.one.from(User).where({ userId: sUserId });

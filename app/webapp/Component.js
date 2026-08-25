@@ -1,8 +1,9 @@
 sap.ui.define([
   "sap/ui/core/UIComponent",
   "sap/ui/model/json/JSONModel",
-  "itsm/ui/model/formatter"
-], function (UIComponent, JSONModel, formatter) {
+  "itsm/ui/model/formatter",
+  "itsm/ui/model/auth"
+], function (UIComponent, JSONModel, formatter, auth) {
   "use strict";
 
   // Routes each persona can open. "detail" is not in any list — every
@@ -15,13 +16,13 @@ sap.ui.define([
   // so "detail" (open otherwise to every persona) is guarded here too.
   var ADMIN_ROUTES = ["organizations", "organizationDetail"];
 
-  // Home page URL for each persona. Same value as the route pattern in
-  // manifest.json.
-  var HOME_HASH_BY_PERSONA = {
-    SERVICE_GROUP: "service-group-dashboard",
-    CONSULTANT: "assigned",
-    ADMIN: "organizations"
-  };
+  // The only pages reachable without a session. Anything else bounces to
+  // the login screen.
+  var PUBLIC_HASHES = ["login", "forgot-password", "reset-password"];
+
+  function isPublicHash(sHash) {
+    return PUBLIC_HASHES.some(function (sPublic) { return sHash.indexOf(sPublic) === 0; });
+  }
 
   return UIComponent.extend("itsm.ui.Component", {
     metadata: { manifest: "json" },
@@ -32,14 +33,30 @@ sap.ui.define([
       var that = this;
       var oRouter = this.getRouter();
 
+      // Every OData request needs the JWT — the service is
+      // authenticated-user only.
+      auth.applyToken(this.getModel());
+
+      // No session yet: open the login screen (or let a password-reset
+      // link through) and stop. The rest of the app never loads.
+      if (!auth.getToken() || !auth.getRole()) {
+        if (!isPublicHash(oRouter.getHashChanger().getHash())) {
+          oRouter.getHashChanger().setHash("login");
+        }
+        oRouter.initialize();
+        return;
+      }
+
       this._resolvePersona().then(function (oPersona) {
+        if (!oPersona) { return; }
+
         that.setModel(new JSONModel(oPersona), "role");
         that._applyOrgTheme(oPersona.theme);
         that._guardRoutes(oRouter, oPersona.persona);
 
         // Set the URL to this persona's home page before the router
         // starts. This way it opens the right page directly, first try.
-        var sHomeHash = HOME_HASH_BY_PERSONA[oPersona.persona];
+        var sHomeHash = auth.ROLE_ROUTES[oPersona.persona];
         if (sHomeHash && !oRouter.getHashChanger().getHash()) {
           oRouter.getHashChanger().setHash(sHomeHash);
         }
@@ -49,18 +66,55 @@ sap.ui.define([
     },
 
     // Asks the server who is logged in (see srv/service.js currentUser()).
-    // If that fails, treat the user as End User instead of blocking the app.
+    // A failure here means the token is gone or expired — there is no
+    // useful fallback persona any more, so send them back to login.
     _resolvePersona: function () {
+      var that = this;
       var oAction = this.getModel().bindContext("/currentUser(...)");
       // getObject() reads the whole response at once — getProperty() on the
       // nested "theme" complex property here can throw synchronously in the
       // v4 model, which would otherwise take the persona/userName reads
-      // down with it into the catch below (silently, as a blank End User).
+      // down with it into the catch below.
       return oAction.execute().then(function () {
-        return oAction.getBoundContext().getObject();
+        var oPersona = oAction.getBoundContext().getObject();
+
+        // Extras for the header's account menu (view/UserMenu.fragment.xml).
+        oPersona.roleLabel = auth.ROLE_LABELS[oPersona.persona] || oPersona.persona;
+        oPersona.switchableRoles = (oPersona.roles || [])
+          .filter(function (sRole) { return sRole !== oPersona.persona; })
+          .map(function (sRole) { return { code: sRole, name: auth.ROLE_LABELS[sRole] || sRole }; });
+
+        return oPersona;
       }).catch(function () {
-        return { persona: "END_USER", userName: "" };
+        that.logout();
+        return null;
       });
+    },
+
+    // Called by the Login page once /auth/login has answered.
+    onLoggedIn: function (oData) {
+      if (!oData.requiresRoleSelection) {
+        return this.enterApp(oData.role);
+      }
+
+      this.setModel(new JSONModel({ userName: oData.user.name, roles: oData.roles }), "roleSelect");
+      this.getRouter().navTo("selectRole");
+    },
+
+    // Entering the app as a role — after login, and after every role
+    // switch. A full reload is deliberate: persona drives the route guards,
+    // the theme and every page's bindings, and reloading is far simpler
+    // than unwinding all of that in place. The token is in sessionStorage,
+    // so no password is asked for again.
+    enterApp: function (sRole) {
+      window.location.hash = "#/" + (auth.ROLE_ROUTES[sRole] || "");
+      window.location.reload();
+    },
+
+    logout: function () {
+      auth.clearSession();
+      window.location.hash = "#/login";
+      window.location.reload();
     },
 
     // Re-skins the app for an End User whose organization has a theme set.

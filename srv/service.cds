@@ -9,7 +9,13 @@ service ITSMService {
 
     // Used by the Message Processor dropdown, the client-filter join, and
     // to resolve a logged-in user's org/theme.
-    entity Users              as projection on master.User;
+    // passwordHash is excluded here, so it can never leave the server —
+    // and an admin can never set one through the generic CRUD either.
+    entity Users              as projection on master.User excluding { passwordHash };
+
+    // Which roles a user may log in as. Plain generic CRUD — the Admin
+    // panel's role checkboxes just create/delete rows here.
+    entity UserRoles          as projection on master.UserRole;
 
     // Admin panel: organizations list + per-org theme/logo.
     entity Organizations      as projection on master.Organization;
@@ -20,9 +26,13 @@ service ITSMService {
 
     action ticketAction(ticketID : String, action: String) returns String;
 
+    // Admin panel: send (or re-send) the "set your password" link.
+    action sendPasswordSetup(userId : String) returns String;
+
     // Tells the frontend which persona the logged-in user is and (for an
     // End User whose org has a theme set) what colors/logo to apply.
-    function currentUser() returns { persona: String; userName: String; theme: { themeType: String; themeScope: String; primaryColor: String; secondaryColor: String; logo: String; newTicketBtnColor: String; newTicketBtnTextColor: String; formBtnColor: String; formBtnTextColor: String; }; };
+    // roles = every role this user may switch to, for the header's role menu.
+    function currentUser() returns { persona: String; userName: String; name: String; email: String; roles: many String; theme: { themeType: String; themeScope: String; primaryColor: String; secondaryColor: String; logo: String; newTicketBtnColor: String; newTicketBtnTextColor: String; formBtnColor: String; formBtnTextColor: String; }; };
 
 }
  

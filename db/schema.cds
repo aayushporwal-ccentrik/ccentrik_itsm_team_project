@@ -20,6 +20,8 @@ context transaction {
         reportedBy       : String;
         createdByName     : String;
         createdByLocation : String;
+        pendingWith       : String;
+        pendingWithName     : String;
         orgName           : String;
         messageProcessor : String;
         supportTeam      : String;
@@ -43,16 +45,16 @@ context transaction {
     }
  
     entity IncidentForm : cuid {
-
+ 
         ticketID : String;
-
+ 
         description : LargeString;
-
+ 
         category1 : String;
         category2 : String;
         category3 : String;
         category4 : String;
-
+ 
         impact : String;
         urgency : String;
         recommendedPriority : String;
@@ -110,8 +112,28 @@ context master {
         name     : String;
         email    : String;
         isActive : Boolean;
-        role     : String;
+        role     : String;   // primary/default role, kept as-is; UserRole below is what login actually reads
         client   : String;
+
+        // Never sent to the frontend - stripped in srv/service.js before READ Users.
+        passwordHash : String(200);
+    }
+
+    // A user can hold more than one role. Matched by plain userId string,
+    // same convention as User.client -> Organization.code.
+    // Role codes come from LookupValue(lookupType='ROLE').
+    entity UserRole : cuid, managed {
+        userId : String;
+        role   : String;
+    }
+
+    // Single-use link for "set your password" and "forgot password".
+    // Only the hash of the token is stored, never the token itself.
+    entity PasswordResetToken : cuid, managed {
+        userId    : String;
+        tokenHash : String(64);
+        expiresAt : Timestamp;
+        usedAt    : Timestamp;
     }
  
     entity Organization : cuid, managed {
@@ -124,7 +146,7 @@ context master {
         secondaryColor    : String(20);
         gradientDirection : String(20) default 'TOP_BOTTOM'; // fixed by spec, not user-editable
         logo              : String(500);                     // effective logo URL shown to end users — points at logoContent below once uploaded, or an admin-pasted external URL
-
+ 
         // Button colors — always solid, never the header/background gradient.
         // Two independent groups: the Dashboard's "New Ticket" button, and the
         // ticket form's Delete/Edit/Save/Assign/Resolve/Close/Submit buttons.
@@ -156,5 +178,7 @@ context master {
         isActive : Boolean;
     }
 }
+ 
+ 
  
  

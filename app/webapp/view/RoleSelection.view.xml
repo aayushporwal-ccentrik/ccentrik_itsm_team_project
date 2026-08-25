@@ -1,0 +1,56 @@
+<mvc:View
+  controllerName="itsm.ui.controller.RoleSelection"
+  xmlns="sap.m"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:core="sap.ui.core"
+  displayBlock="true">
+
+  <Page showHeader="false" backgroundDesign="Transparent" class="appBg">
+
+    <Bar class="appHeader">
+      <contentLeft>
+        <Image src="images/ccentrik.png" height="30px" densityAware="false" class="appLogo"/>
+      </contentLeft>
+      <contentMiddle>
+        <Title text="Service Desk" class="appHeaderTitle"/>
+      </contentMiddle>
+    </Bar>
+
+    <VBox class="sectionCard">
+      <Title text="Welcome, {roleSelect>/userName}!" level="H3" class="roleWelcome"/>
+      <Text
+        text="You have been assigned multiple roles. Please select the role you want to continue with."
+        class="authSubtitle"/>
+
+      <MessageStrip
+        id="roleError"
+        type="Error"
+        showIcon="true"
+        visible="false"
+        class="authMessage"/>
+
+      <Text text="SELECT YOUR ROLE" class="sectionPill roleSectionPill"/>
+
+      <!-- Only the roles the backend actually returned. Wraps to 2 and then
+           1 per row on smaller screens (see .roleTile in css/style.css). -->
+      <HBox wrap="Wrap" class="roleTileRow" items="{roleSelect>/roles}">
+        <VBox class="roleTile">
+          <core:Icon src="sap-icon://person-placeholder" size="1.6rem" class="roleTileIcon"/>
+          <Title text="{roleSelect>name}" level="H4" class="roleTileTitle"/>
+          <Text text="{roleSelect>description}" class="roleTileText"/>
+          <Button
+            text="SELECT ROLE"
+            icon="sap-icon://arrow-right"
+            iconFirst="false"
+            type="Emphasized"
+            width="100%"
+            press=".onSelectRole"
+            class="formActionBtn roleTileButton"/>
+        </VBox>
+      </HBox>
+
+      <Link text="Logout" press=".onLogout" class="authLink"/>
+    </VBox>
+
+  </Page>
+</mvc:View>

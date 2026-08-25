@@ -3,8 +3,9 @@ sap.ui.define([
   "sap/ui/model/json/JSONModel",
   "sap/ui/model/Filter",
   "sap/ui/model/FilterOperator",
-  "itsm/ui/model/formatter"
-], function (Controller, JSONModel, Filter, FilterOperator, formatter) {
+  "itsm/ui/model/formatter",
+  "itsm/ui/model/userMenu"
+], function (Controller, JSONModel, Filter, FilterOperator, formatter, userMenu) {
   "use strict";
 
   var HIGH_PRIORITY_CODES = ["HIGH", "CRITICAL"];
@@ -22,6 +23,10 @@ sap.ui.define([
   var TREND_RANGE_DAYS = 14;
 
   return Controller.extend("itsm.ui.controller.ServiceGroupDashboard", {
+    // Header account popover: current role, role switch, logout.
+    onUserMenu: function (oEvent) {
+      userMenu.open(this, oEvent.getSource());
+    },
 
     formatPriorityState: formatter.formatPriorityState,
 

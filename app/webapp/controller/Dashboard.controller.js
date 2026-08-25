@@ -5,8 +5,9 @@ sap.ui.define([
   "sap/ui/model/FilterOperator",
   "sap/m/MessageToast",
   "itsm/ui/model/lookupValues",
-  "itsm/ui/model/formatter"
-], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, fetchLookup, formatter) {
+  "itsm/ui/model/formatter",
+  "itsm/ui/model/userMenu"
+], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, fetchLookup, formatter, userMenu) {
   "use strict";
 
   // The full pool of KPI tiles a user can choose from — exactly 6 are
@@ -38,6 +39,10 @@ sap.ui.define([
   var CHART_PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#4a3aa7"];
 
   return Controller.extend("itsm.ui.controller.Dashboard", {
+    // Header account popover: current role, role switch, logout.
+    onUserMenu: function (oEvent) {
+      userMenu.open(this, oEvent.getSource());
+    },
 
     formatDateTime: formatter.formatDateTime,
     formatPriorityState: formatter.formatPriorityState,

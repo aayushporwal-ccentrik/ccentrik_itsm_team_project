@@ -1,0 +1,23 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core">
+
+  <Popover id="userMenuPopover" title="Account" placement="Bottom" contentWidth="16rem">
+    <VBox class="sapUiSmallMargin">
+      <Text text="{role>/name}" class="profileName"/>
+      <Text text="Current Role: {role>/roleLabel}" class="profileRole"/>
+    </VBox>
+
+    <!-- Only the other roles this user holds. Empty for single-role users,
+         so the section disappears on its own. -->
+    <VBox visible="{= ${role>/switchableRoles}.length > 0 }">
+      <Text text="SWITCH ROLE" class="subPill userMenuPill"/>
+      <List items="{role>/switchableRoles}" mode="None" showSeparators="None">
+        <StandardListItem title="{role>name}" icon="sap-icon://switch-classes" type="Active" press=".onSwitchRole"/>
+      </List>
+    </VBox>
+
+    <Button text="Logout" icon="sap-icon://log" width="100%" press=".onLogout" class="userMenuLogout"/>
+  </Popover>
+
+</core:FragmentDefinition>

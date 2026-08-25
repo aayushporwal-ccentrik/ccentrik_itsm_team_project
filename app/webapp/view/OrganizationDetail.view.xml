@@ -46,7 +46,7 @@
           <VBox class="sectionCard">
             <Text text="ORGANIZATION USERS" class="sectionPill"/>
             <MessageStrip
-              text="Creating a user here only adds their record. A working login still needs to be provisioned separately (mocked auth locally, identity provider in production)."
+              text="A new user is emailed a link to set their own password. You never see or set it."
               type="Information" showIcon="true" showCloseButton="false" class="attachmentsNote"/>
 
             <Table id="orgUsersTable"
@@ -63,7 +63,7 @@
                 <Column width="14rem"><Text text="Email"/></Column>
                 <Column width="10rem"><Text text="Role"/></Column>
                 <Column width="7rem"><Text text="Status"/></Column>
-                <Column width="6rem"/>
+                <Column width="9rem"/>
               </columns>
               <items>
                 <ColumnListItem>
@@ -74,6 +74,7 @@
                     <ObjectStatus text="{= ${isActive} ? 'Active' : 'Inactive' }" state="{= ${isActive} ? 'Success' : 'Error' }"/>
                     <HBox>
                       <Button icon="sap-icon://edit" type="Transparent" tooltip="Edit User" press=".onEditUser"/>
+                      <Button icon="sap-icon://email" type="Transparent" tooltip="Resend Password Setup Link" press=".onResendPasswordSetup"/>
                       <Button icon="sap-icon://delete" type="Transparent" tooltip="Delete User" press=".onDeleteUser"/>
                     </HBox>
                   </cells>
@@ -196,12 +197,13 @@
         <Input id="newUserEmail" width="100%" class="sapUiTinyMarginBottom"/>
         <Label text="Name" required="true"/>
         <Input id="newUserName" width="100%" class="sapUiTinyMarginBottom"/>
-        <Label text="Role" required="true"/>
-        <Select id="newUserRole" width="100%" selectedKey="END_USER" class="sapUiTinyMarginBottom">
+        <Label text="Roles" required="true"/>
+        <MultiComboBox id="newUserRoles" width="100%" class="sapUiTinyMarginBottom">
           <core:Item key="END_USER" text="End User"/>
           <core:Item key="SERVICE_GROUP" text="Service Group"/>
           <core:Item key="CONSULTANT" text="Consultant"/>
-        </Select>
+        </MultiComboBox>
+        <Text text="Pick one or more. With more than one, the user chooses which to work as after login." class="fieldHint sapUiTinyMarginBottom"/>
         <Label text="Status"/>
         <Switch id="newUserActive" state="true" customTextOn="Active" customTextOff="Inactive"/>
       </VBox>

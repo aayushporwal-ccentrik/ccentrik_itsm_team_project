@@ -2,13 +2,18 @@ sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageToast",
-  "sap/base/Log"
-], function (Controller, JSONModel, MessageToast, Log) {
+  "sap/base/Log",
+  "itsm/ui/model/userMenu"
+], function (Controller, JSONModel, MessageToast, Log, userMenu) {
   "use strict";
 
   var UPDATE_GROUP = "incidentGroup";
 
   return Controller.extend("itsm.ui.controller.Organizations", {
+    // Header account popover: current role, role switch, logout.
+    onUserMenu: function (oEvent) {
+      userMenu.open(this, oEvent.getSource());
+    },
 
     onInit: function () {
       this.getOwnerComponent().getRouter().getRoute("organizations").attachPatternMatched(this._onShow, this);

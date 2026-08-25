@@ -389,7 +389,7 @@ sap.ui.define([
       this.byId("newUserEmail").setValue("");
       this.byId("newUserEmail").setEnabled(true);
       this.byId("newUserName").setValue("");
-      this.byId("newUserRole").setSelectedKey("END_USER");
+      this.byId("newUserRoles").setSelectedKeys(["END_USER"]);
       this.byId("newUserActive").setState(true);
       this.byId("addUserDialog").setTitle("Add User");
       this.byId("userDialogSaveBtn").setText("Create");
@@ -408,11 +408,61 @@ sap.ui.define([
       this.byId("newUserEmail").setValue(oContext.getProperty("email"));
       this.byId("newUserEmail").setEnabled(false);
       this.byId("newUserName").setValue(oContext.getProperty("name"));
-      this.byId("newUserRole").setSelectedKey(oContext.getProperty("role"));
       this.byId("newUserActive").setState(oContext.getProperty("isActive"));
       this.byId("addUserDialog").setTitle("Edit User");
       this.byId("userDialogSaveBtn").setText("Save");
       this.byId("addUserDialog").open();
+
+      // Roles live in their own rows, so they come from a separate read.
+      var that = this;
+      this._readUserRoles(oContext.getProperty("userId")).then(function (aRoles) {
+        that.byId("newUserRoles").setSelectedKeys(aRoles.length ? aRoles : [oContext.getProperty("role")]);
+      });
+    },
+
+    _readUserRoles: function (sUserId) {
+      return this.getOwnerComponent().getModel().bindList("/UserRoles", undefined, undefined, undefined, {
+        $filter: "userId eq '" + sUserId + "'"
+      }).requestContexts().then(function (aContexts) {
+        return aContexts.map(function (oCtx) { return oCtx.getProperty("role"); });
+      });
+    },
+
+    // Adds the roles that were ticked and removes the ones that weren't.
+    // Rows that are already right are left alone.
+    _syncUserRoles: function (sUserId, aRoles) {
+      var oModel = this.getOwnerComponent().getModel();
+
+      return oModel.bindList("/UserRoles", undefined, undefined, undefined, {
+        $filter: "userId eq '" + sUserId + "'"
+      }).requestContexts().then(function (aContexts) {
+        var aExisting = aContexts.map(function (oCtx) { return oCtx.getProperty("role"); });
+
+        aContexts.forEach(function (oCtx) {
+          if (aRoles.indexOf(oCtx.getProperty("role")) === -1) { oCtx.delete(UPDATE_GROUP); }
+        });
+
+        var oListBinding = oModel.bindList("/UserRoles");
+        aRoles.forEach(function (sRole) {
+          if (aExisting.indexOf(sRole) === -1) { oListBinding.create({ userId: sUserId, role: sRole }); }
+        });
+
+        // create()/delete() only queue on the batch group — this is what sends them.
+        return oModel.submitBatch(UPDATE_GROUP);
+      });
+    },
+
+    onResendPasswordSetup: function (oEvent) {
+      var sUserId = oEvent.getSource().getBindingContext().getProperty("userId");
+      var oAction = this.getOwnerComponent().getModel().bindContext("/sendPasswordSetup(...)");
+
+      oAction.setParameter("userId", sUserId);
+      oAction.execute().then(function () {
+        MessageToast.show(oAction.getBoundContext().getValue());
+      }).catch(function (oError) {
+        Log.error("Password setup link failed", oError);
+        MessageToast.show("Could not send the password setup link.");
+      });
     },
 
     onSaveUser: function () {
@@ -423,16 +473,27 @@ sap.ui.define([
         return;
       }
 
-      var sRole = this.byId("newUserRole").getSelectedKey();
+      var aRoles = this.byId("newUserRoles").getSelectedKeys();
+      if (!aRoles.length) {
+        MessageToast.show("Please select at least one role.");
+        return;
+      }
+
+      // User.role stays the primary/default one; UserRole rows are what
+      // login actually reads.
+      var sRole = aRoles[0];
       var bActive = this.byId("newUserActive").getState();
       var oModel = this.getOwnerComponent().getModel();
       var that = this;
 
       if (this._oEditUserContext) {
+        var sEditUserId = this._oEditUserContext.getProperty("userId");
         this._oEditUserContext.setProperty("name", sName);
         this._oEditUserContext.setProperty("role", sRole);
         this._oEditUserContext.setProperty("isActive", bActive);
         oModel.submitBatch(UPDATE_GROUP).then(function () {
+          return that._syncUserRoles(sEditUserId, aRoles);
+        }).then(function () {
           that.byId("addUserDialog").close();
           MessageToast.show("User updated.");
           that._oEditUserContext = null;
@@ -453,8 +514,12 @@ sap.ui.define([
       });
 
       oContext.created().then(function () {
+        // The backend already added the primary role and emailed the setup
+        // link (srv/service.js after CREATE Users) — this adds the rest.
+        return that._syncUserRoles(sEmail, aRoles);
+      }).then(function () {
         that.byId("addUserDialog").close();
-        MessageToast.show("User created. Provision their login separately.");
+        MessageToast.show("User created. A password setup link has been emailed to them.");
         that.byId("orgUsersTable").getBinding("items").refresh();
       }).catch(function (oError) {
         Log.error("User create failed", oError);
