@@ -181,6 +181,13 @@ sap.ui.define([], function () {
       showResolve: sPersona === "CONSULTANT" && bEditing && sStatus === "ASSIGNED",
       showClose: sPersona === "END_USER" && sStatus === "RESOLVED",
 
+      // Reminder bell — nudges whoever the ticket is currently pending
+      // with (see srv/service.js sendReminder). Not persona-gated: anyone
+      // looking at an active ticket has a reason to want it moving. Only
+      // once it's persisted and actually somewhere in the pending workflow
+      // (not a Draft nobody's waiting on yet, not a Closed ticket).
+      showReminder: !!bPersisted && sStatus !== "DRAFT" && sStatus !== "CLOSED",
+
       subtitle: bCreate ? "Create a new incident ticket" : ""
     };
   };

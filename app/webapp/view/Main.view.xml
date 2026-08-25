@@ -25,6 +25,9 @@
         <Title text="{path: 'ticketType', formatter: '.formatTicketTypeName'}" class="appHeaderTitle"/>
       </contentMiddle>
       <contentRight>
+        <Button icon="sap-icon://bell" type="Transparent" tooltip="{ui>/reminderTooltip}"
+                visible="{ui>/showReminder}" enabled="{ui>/reminderEnabled}"
+                press=".onReminder" class="sapUiTinyMarginEnd"/>
         <Button text="Delete" class="formActionBtn dangerBtn sapUiTinyMarginEnd" visible="{ui>/showDelete}" press=".onDelete"/>
         <Button text="Edit" class="formActionBtn sapUiTinyMarginEnd" visible="{ui>/showEdit}" press=".onEdit"/>
         <Button text="{ui>/saveLabel}" class="formActionBtn sapUiTinyMarginEnd" visible="{ui>/showSave}" enabled="{ui>/saveEnabled}" press=".onSave"/>

@@ -1,5 +1,6 @@
 sap.ui.define([
   "sap/ui/core/mvc/Controller",
+  "sap/ui/core/Fragment",
   "sap/ui/model/json/JSONModel",
   "sap/ui/model/Filter",
   "sap/ui/model/FilterOperator",
@@ -7,7 +8,7 @@ sap.ui.define([
   "itsm/ui/model/lookupValues",
   "itsm/ui/model/formatter",
   "sap/base/Log"
-], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, fetchLookup, formatter, Log) {
+], function (Controller, Fragment, JSONModel, Filter, FilterOperator, MessageToast, fetchLookup, formatter, Log) {
   "use strict";
 
   // The full pool of KPI tiles a user can choose from — exactly 6 are
@@ -34,6 +35,7 @@ sap.ui.define([
     CONSULTANT: "Consultant",
     ADMIN: "Admin"
   };
+
 
   // Same categorical palette as the rest of the app's charts.
   var CHART_PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#4a3aa7"];
@@ -555,6 +557,41 @@ sap.ui.define([
       this.getOwnerComponent().getRouter().navTo("detail", { id: sTicketId });
     },
 
+    // Plain formatters, not expression bindings ({= ... }) — those kept
+    // leaking the raw unconverted property value into 'visible' on this
+    // exact table (a real, reproducible bug on this environment, not a
+    // caching artifact — confirmed by diffing the served file against
+    // source). Every other property binding in this table already uses
+    // this formatter pattern; matching it here sidesteps the issue.
+    formatReminderVisible: function (sStatus) {
+      return sStatus !== "DRAFT" && sStatus !== "CLOSED";
+    },
+
+    formatReminderClass: function (bReady) {
+      return bReady ? "reminderBtnBlue" : "reminderBtnRed";
+    },
+
+    // Bell in the table's last column — a Button inside a Navigation-type
+    // row captures its own click, so this doesn't also trigger
+    // onTicketPress underneath it. reminderReady is computed server-side
+    // on every read (srv/service.js onAfterReadTickets), so refreshing the
+    // row's own context after a send re-evaluates it and the button flips
+    // back to red/disabled immediately, without reloading the whole table.
+    onTableReminder: function (oEvent) {
+      var oContext = oEvent.getSource().getBindingContext();
+      var sTicketId = oContext.getProperty("ticketID");
+      var oOperation = this.getOwnerComponent().getModel().bindContext("/sendReminder(...)");
+      oOperation.setParameter("ticketID", sTicketId);
+
+      oOperation.execute().then(function () {
+        MessageToast.show("Reminder sent.");
+        oContext.refresh();
+      }).catch(function (oError) {
+        Log.error("sendReminder failed", oError);
+        MessageToast.show((oError && oError.message) || "Could not send the reminder.");
+      });
+    },
+
     onGoDashboard: function () {
       this.getOwnerComponent().getRouter().navTo("dashboard");
     },
@@ -576,6 +613,26 @@ sap.ui.define([
 
     // Own User row (name/email/org) + the persona already known from
     // login — one small read, shown in a popover, nothing navigated to.
+    // Loaded from a fragment and cached, not declared inline in this view —
+    // a Popover declared as a plain XML content child of Page rendered
+    // inline in the normal page flow on this environment (visible on load,
+    // sitting right where it's declared, behind the first KPI tile) instead
+    // of staying hidden until openBy() — same fix already used by
+    // OrganizationDetail.controller.js's color picker for the same reason.
+    _getProfilePopover: function () {
+      var that = this;
+      if (this._pProfilePopover) { return this._pProfilePopover; }
+      this._pProfilePopover = Fragment.load({
+        id: this.getView().getId(),
+        name: "itsm.ui.view.ProfilePopover",
+        controller: this
+      }).then(function (oPopover) {
+        that.getView().addDependent(oPopover);
+        return oPopover;
+      });
+      return this._pProfilePopover;
+    },
+
     onShowProfile: function (oEvent) {
       var that = this;
       var oSource = oEvent.getSource();
@@ -604,7 +661,9 @@ sap.ui.define([
               organization: sOrgName,
               isActive: oUser.isActive !== false
             }), "profile");
-            that.byId("profilePopover").openBy(oSource);
+            that._getProfilePopover().then(function (oPopover) {
+              oPopover.openBy(oSource);
+            });
           });
         });
     },

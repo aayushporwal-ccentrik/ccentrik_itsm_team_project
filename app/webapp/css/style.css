@@ -434,6 +434,13 @@ html[data-theme-scope="background"] .sapMITBSelected .sapMITBText { color: var(-
 }
 .chartPane.chartCollapsed .analyticsBtn { display: none; }
 
+/* Table row's reminder bell — red + disabled while on cooldown, blue +
+   clickable once ready (see Dashboard.controller.js formatReminderClass/
+   formatReminderEnabled). The disabled state's grayed-out look on top of
+   red still comes from the base UI5 theme, not overridden here. */
+.reminderBtnRed .sapUiIcon { color: #dc2626 !important; }
+.reminderBtnBlue .sapUiIcon { color: #2563eb !important; }
+
 /* ---- donut + its color key side by side (chart shifted left, key fills
    the rest — stands in for the chart's own legend, which is off) ---- */
 .chartRow { gap: 8px; }

@@ -1,0 +1,19 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core">
+  <Popover id="profilePopover" title="My Profile" placement="Bottom" contentWidth="18rem">
+    <VBox class="sapUiSmallMargin">
+      <HBox alignItems="Center" class="sapUiSmallMarginBottom">
+        <core:Icon src="sap-icon://person-placeholder" size="2rem" class="sapUiSmallMarginEnd"/>
+        <VBox>
+          <Text text="{profile>/name}" class="profileName"/>
+          <Text text="{profile>/roleLabel}" class="profileRole"/>
+        </VBox>
+      </HBox>
+      <ObjectAttribute title="Username" text="{profile>/userId}"/>
+      <ObjectAttribute title="Email" text="{profile>/email}" visible="{= !!${profile>/email} }"/>
+      <ObjectAttribute title="Organization" text="{profile>/organization}" visible="{= !!${profile>/organization} }"/>
+      <ObjectAttribute title="Status" text="{= ${profile>/isActive} ? 'Active' : 'Inactive' }"/>
+    </VBox>
+  </Popover>
+</core:FragmentDefinition>

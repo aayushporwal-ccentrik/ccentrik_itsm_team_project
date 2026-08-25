@@ -123,6 +123,40 @@ sap.ui.define([
       return oContext.requestObject().then(function (oTicket) {
         that._refreshUiModel(oTicket.status);
         that._setAttachmentsModel(oTicket.attachments, oContext);
+        if (that.getView().getModel("ui").getProperty("/showReminder")) {
+          return that._refreshReminderStatus(sId);
+        }
+      });
+    },
+
+    // Bell's enabled state + tooltip, refreshed whenever the ticket
+    // (re)loads — cooldown state is visible up front, not just discovered
+    // by clicking and getting a 429 back.
+    _refreshReminderStatus: function (sId) {
+      var that = this;
+      var oOperation = this.getView().getModel().bindContext("/reminderStatus(ticketID='" + encodeURIComponent(sId) + "')");
+      return oOperation.execute().then(function () {
+        var oResult = oOperation.getBoundContext().getObject();
+        var oUiModel = that.getView().getModel("ui");
+        oUiModel.setProperty("/reminderEnabled", !!oResult.enabled);
+        oUiModel.setProperty("/reminderTooltip", oResult.enabled
+          ? "Send a reminder"
+          : "On cooldown until " + new Date(oResult.nextAllowedAt).toLocaleString());
+      });
+    },
+
+    onReminder: function () {
+      var that = this;
+      var sTicketId = this.getView().getBindingContext().getProperty("ticketID");
+      var oOperation = this.getView().getModel().bindContext("/sendReminder(...)");
+      oOperation.setParameter("ticketID", sTicketId);
+
+      oOperation.execute().then(function () {
+        MessageToast.show("Reminder sent.");
+        return that._refreshReminderStatus(sTicketId);
+      }).catch(function (oError) {
+        Log.error("sendReminder failed", oError);
+        MessageBox.error(that._actionErrorText(oError) || "Could not send the reminder.");
       });
     },
 
