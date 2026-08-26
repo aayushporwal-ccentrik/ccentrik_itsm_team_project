@@ -278,9 +278,27 @@ sap.ui.define([
 
     _runLifecycleAction: function (sAction, sErrorFallback) {
       var that = this;
-      var sTicketId = this.getView().getBindingContext().getProperty("ticketID");
+      var oModel = this.getView().getModel();
+      var oContext = this.getView().getBindingContext();
+      var sTicketId = oContext.getProperty("ticketID");
 
-      this._withBusy(this.getView().getModel().submitBatch(UPDATE_GROUP).then(function () {
+      // ASSIGN is the only action that depends on a field the user has just
+      // filled in, and the server can only see it once it is saved. Check it
+      // here so an empty dropdown says so plainly, instead of the server
+      // reporting "no consultant" for a value the user can see on screen.
+      if (sAction === "ASSIGN" && !oContext.getProperty("messageProcessor")) {
+        MessageBox.error("Please select a Message Processor before assigning the ticket.");
+        return;
+      }
+
+      this._withBusy(oModel.submitBatch(UPDATE_GROUP).then(function () {
+        // submitBatch() resolves even when a request inside the batch was
+        // rejected, so leftover pending changes are the only reliable sign
+        // that the save never reached the server. Without this the action
+        // runs against stale data and fails with a misleading message.
+        if (oModel.hasPendingChanges(UPDATE_GROUP)) {
+          throw new Error("The ticket could not be saved, so the action was not performed.");
+        }
         that._bEditing = false;
         return that._invokeTicketAction(sTicketId, sAction);
       }).then(function (sMessage) {
