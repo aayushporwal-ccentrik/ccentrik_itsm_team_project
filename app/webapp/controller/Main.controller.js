@@ -6,8 +6,10 @@ sap.ui.define([
   "sap/base/Log",
   "itsm/ui/model/roleConfig",
   "itsm/ui/model/formatter",
-  "itsm/ui/model/lookupValues"
-], function (Controller, JSONModel, MessageToast, MessageBox, Log, getTicketFormUiModel, formatter, fetchLookup) {
+  "itsm/ui/model/lookupValues",
+  "itsm/ui/model/auth",
+  "itsm/ui/model/busy"
+], function (Controller, JSONModel, MessageToast, MessageBox, Log, getTicketFormUiModel, formatter, fetchLookup, auth, busy) {
   "use strict";
 
   var UPDATE_GROUP = "incidentGroup";
@@ -134,7 +136,9 @@ sap.ui.define([
     // by clicking and getting a 429 back.
     _refreshReminderStatus: function (sId) {
       var that = this;
-      var oOperation = this.getView().getModel().bindContext("/reminderStatus(ticketID='" + encodeURIComponent(sId) + "')");
+      // "(...)" + setParameter(), not the value baked into the path — execute() needs a deferred binding.
+      var oOperation = this.getView().getModel().bindContext("/reminderStatus(...)");
+      oOperation.setParameter("ticketID", sId);
       return oOperation.execute().then(function () {
         var oResult = oOperation.getBoundContext().getObject();
         var oUiModel = that.getView().getModel("ui");
@@ -151,13 +155,13 @@ sap.ui.define([
       var oOperation = this.getView().getModel().bindContext("/sendReminder(...)");
       oOperation.setParameter("ticketID", sTicketId);
 
-      oOperation.execute().then(function () {
+      this._withBusy(oOperation.execute().then(function () {
         MessageToast.show("Reminder sent.");
         return that._refreshReminderStatus(sTicketId);
       }).catch(function (oError) {
         Log.error("sendReminder failed", oError);
         MessageBox.error(that._actionErrorText(oError) || "Could not send the reminder.");
-      });
+      }));
     },
 
     // Persona comes from the server (see Component.js / srv/service.js
@@ -181,6 +185,10 @@ sap.ui.define([
       this._refreshUiModel(this.getView().getBindingContext().getProperty("status"));
     },
 
+    _withBusy: function (pAction) {
+      return busy.withBusy(this.getView(), pAction);
+    },
+
     // First save of a brand new ticket creates it as Draft and shows the
     // generated ticket number; saving an already-open ticket (Service
     // Group / Consultant editing) just persists the changes.
@@ -194,7 +202,7 @@ sap.ui.define([
         pSaved = pSaved.then(function () { return oContext.created(); });
       }
 
-      pSaved.then(function () {
+      this._withBusy(pSaved.then(function () {
         if (bWasCreating) {
           that._oPendingCreateContext = null;
           var sNumber = oContext.getProperty("ticketNumber");
@@ -219,7 +227,7 @@ sap.ui.define([
         // hard to pin down.
         Log.error("Ticket save failed", oError);
         MessageBox.error("Could not save the ticket. Please check the required fields.");
-      });
+      }));
     },
 
     // Moves the ticket straight to New — either a brand new ticket that
@@ -238,7 +246,7 @@ sap.ui.define([
         pReady = pReady.then(function () { return oContext.created(); });
       }
 
-      pReady.then(function () {
+      this._withBusy(pReady.then(function () {
         if (bWasCreating) { that._oPendingCreateContext = null; }
         return that._invokeTicketAction(oContext.getProperty("ticketID"), "SUBMIT");
       }).then(function () {
@@ -248,7 +256,7 @@ sap.ui.define([
       }).catch(function (oError) {
         Log.error("Ticket submit failed", oError);
         MessageBox.error(that._actionErrorText(oError) || "Could not submit the ticket. Please check the required fields.");
-      });
+      }));
     },
 
     // Service Group assigning a Consultant, Consultant marking their work
@@ -272,7 +280,7 @@ sap.ui.define([
       var that = this;
       var sTicketId = this.getView().getBindingContext().getProperty("ticketID");
 
-      this.getView().getModel().submitBatch(UPDATE_GROUP).then(function () {
+      this._withBusy(this.getView().getModel().submitBatch(UPDATE_GROUP).then(function () {
         that._bEditing = false;
         return that._invokeTicketAction(sTicketId, sAction);
       }).then(function (sMessage) {
@@ -280,7 +288,7 @@ sap.ui.define([
       }).catch(function (oError) {
         Log.error("ticketAction " + sAction + " failed", oError);
         MessageBox.error(that._actionErrorText(oError) || sErrorFallback);
-      });
+      }));
     },
 
     // Calls the ticketAction OData action, then reloads the ticket so the
@@ -316,13 +324,13 @@ sap.ui.define([
           // group (see manifest.json), so nothing is actually sent until
           // submitBatch flushes it, same as onSave/onSubmit already do.
           oModel.submitBatch(UPDATE_GROUP);
-          pDeleted.then(function () {
+          that._withBusy(pDeleted.then(function () {
             MessageToast.show("Ticket deleted");
             that.getOwnerComponent().getRouter().navTo("dashboard");
           }).catch(function (oError) {
             Log.error("Ticket delete failed", oError);
             MessageBox.error("Could not delete the ticket.");
-          });
+          }));
         }
       });
     },
@@ -406,6 +414,33 @@ sap.ui.define([
     // Attachment is only reachable through the Ticket's "attachments" nav
     // property (CAP rejects a direct top-level path to it), so the delete
     // path has to be built relative to the ticket context, not absolute.
+    // <Link href> can't carry the Authorization header, so fetch() + Blob URL instead.
+    onDownloadAttachment: function (oEvent) {
+      var oContext = oEvent.getSource().getBindingContext("attachments");
+      var sUrl = oContext.getProperty("contentUrl");
+      var sFileName = oContext.getProperty("fileName");
+
+      fetch(sUrl, { headers: { "Authorization": "Bearer " + auth.getToken() } })
+        .then(function (oResponse) {
+          if (!oResponse.ok) { throw new Error("Download failed with status " + oResponse.status); }
+          return oResponse.blob();
+        })
+        .then(function (oBlob) {
+          var sObjectUrl = URL.createObjectURL(oBlob);
+          var oLink = document.createElement("a");
+          oLink.href = sObjectUrl;
+          oLink.download = sFileName || "attachment";
+          document.body.appendChild(oLink);
+          oLink.click();
+          document.body.removeChild(oLink);
+          URL.revokeObjectURL(sObjectUrl);
+        })
+        .catch(function (oError) {
+          Log.error("Attachment download failed", oError);
+          MessageToast.show("Could not download the attachment.");
+        });
+    },
+
     onAttachmentRemove: function (oEvent) {
       var sId = oEvent.getSource().getBindingContext("attachments").getProperty("id");
       var oTicketContext = this.getView().getBindingContext();
@@ -455,9 +490,13 @@ sap.ui.define([
 
     _uploadContent: function (sTicketId, sAttId, oFile) {
       var sUrl = this._getServiceUrl() + "Tickets('" + encodeURIComponent(sTicketId) + "')/attachments(ID='" + sAttId + "')/content";
+      // Raw fetch(), not the OData model, so the model's auth header doesn't apply here.
       return fetch(sUrl, {
         method: "PUT",
-        headers: { "Content-Type": this._resolveMimeType(oFile) },
+        headers: {
+          "Content-Type": this._resolveMimeType(oFile),
+          "Authorization": "Bearer " + auth.getToken()
+        },
         body: oFile,
         credentials: "same-origin"
       }).then(function (oResponse) {

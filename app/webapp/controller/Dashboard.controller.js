@@ -583,17 +583,21 @@ sap.ui.define([
     // row's own context after a send re-evaluates it and the button flips
     // back to red/disabled immediately, without reloading the whole table.
     onTableReminder: function (oEvent) {
-      var oContext = oEvent.getSource().getBindingContext();
+      var oButton = oEvent.getSource();
+      var oContext = oButton.getBindingContext();
       var sTicketId = oContext.getProperty("ticketID");
       var oOperation = this.getOwnerComponent().getModel().bindContext("/sendReminder(...)");
       oOperation.setParameter("ticketID", sTicketId);
 
+      // Disabled immediately so a second click before the refresh lands can't slip through.
+      oButton.setEnabled(false);
       oOperation.execute().then(function () {
         MessageToast.show("Reminder sent.");
-        oContext.refresh();
       }).catch(function (oError) {
         Log.error("sendReminder failed", oError);
         MessageToast.show((oError && oError.message) || "Could not send the reminder.");
+      }).finally(function () {
+        oContext.refresh();
       });
     },
 

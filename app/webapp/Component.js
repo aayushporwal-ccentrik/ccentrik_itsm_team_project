@@ -21,7 +21,15 @@ sap.ui.define([
   var PUBLIC_HASHES = ["login", "forgot-password", "reset-password"];
 
   function isPublicHash(sHash) {
-    return PUBLIC_HASHES.some(function (sPublic) { return sHash.indexOf(sPublic) === 0; });
+    var sClean = (sHash || "").replace(/^\//, "");
+    return PUBLIC_HASHES.some(function (sPublic) { return sClean.indexOf(sPublic) === 0; });
+  }
+
+  // oRouter.getHashChanger().getHash() reads empty at this point in the
+  // component lifecycle (before the router is initialized) — read the
+  // browser's own hash directly instead.
+  function getRawHash() {
+    return window.location.hash.replace(/^#\/?/, "");
   }
 
   return UIComponent.extend("itsm.ui.Component", {
@@ -40,7 +48,7 @@ sap.ui.define([
       // No session yet: open the login screen (or let a password-reset
       // link through) and stop. The rest of the app never loads.
       if (!auth.getToken() || !auth.getRole()) {
-        if (!isPublicHash(oRouter.getHashChanger().getHash())) {
+        if (!isPublicHash(getRawHash())) {
           oRouter.getHashChanger().setHash("login");
         }
         oRouter.initialize();
@@ -57,7 +65,7 @@ sap.ui.define([
         // Set the URL to this persona's home page before the router
         // starts. This way it opens the right page directly, first try.
         var sHomeHash = auth.ROLE_ROUTES[oPersona.persona];
-        if (sHomeHash && !oRouter.getHashChanger().getHash()) {
+        if (sHomeHash && !getRawHash()) {
           oRouter.getHashChanger().setHash(sHomeHash);
         }
 
@@ -228,10 +236,11 @@ sap.ui.define([
       this._sPendingTicketType = sTicketType;
     },
 
+    // Not cleared on read: a duplicate patternMatched fire for the same
+    // "New Ticket" navigation (real UI5 router behavior) must still see the
+    // type, not null. The next genuine New Ticket click always overwrites it.
     takePendingTicketType: function () {
-      var sTicketType = this._sPendingTicketType;
-      this._sPendingTicketType = null;
-      return sTicketType;
+      return this._sPendingTicketType;
     }
   });
 });

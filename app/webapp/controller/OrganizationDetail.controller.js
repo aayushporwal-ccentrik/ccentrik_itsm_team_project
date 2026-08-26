@@ -6,8 +6,10 @@ sap.ui.define([
   "sap/m/MessageBox",
   "sap/base/Log",
   "sap/ui/unified/ColorPickerPopover",
-  "itsm/ui/model/formatter"
-], function (Controller, Filter, FilterOperator, MessageToast, MessageBox, Log, ColorPickerPopover, formatter) {
+  "itsm/ui/model/formatter",
+  "itsm/ui/model/auth",
+  "itsm/ui/model/busy"
+], function (Controller, Filter, FilterOperator, MessageToast, MessageBox, Log, ColorPickerPopover, formatter, auth, busy) {
   "use strict";
 
   var UPDATE_GROUP = "incidentGroup";
@@ -79,15 +81,15 @@ sap.ui.define([
     },
 
     onSaveDetails: function () {
-      this.getOwnerComponent().getModel().submitBatch(UPDATE_GROUP).then(function () {
+      busy.withBusy(this.getView(), this.getOwnerComponent().getModel().submitBatch(UPDATE_GROUP).then(function () {
         MessageToast.show("Organization details saved.");
-      });
+      }));
     },
 
     onSaveTheme: function () {
-      this.getOwnerComponent().getModel().submitBatch(UPDATE_GROUP).then(function () {
+      busy.withBusy(this.getView(), this.getOwnerComponent().getModel().submitBatch(UPDATE_GROUP).then(function () {
         MessageToast.show("Theme saved.");
-      });
+      }));
     },
 
     // A picked file doesn't upload immediately — it opens the crop dialog
@@ -252,7 +254,7 @@ sap.ui.define([
       oContext.setProperty("logoFileName", sFileName);
       oContext.setProperty("logoMediaType", sMediaType);
 
-      oModel.submitBatch(UPDATE_GROUP)
+      busy.withBusy(this.getView(), oModel.submitBatch(UPDATE_GROUP)
         .then(function () { return that._uploadLogoContent(oContext, oBlob, sMediaType); })
         .then(function () {
           oContext.setProperty("logo", that._getServiceUrl() + oContext.getPath().replace(/^\//, "") + "/logoContent?v=" + Date.now());
@@ -262,14 +264,18 @@ sap.ui.define([
         .catch(function (oError) {
           Log.error("Logo upload failed", oError);
           MessageToast.show("Could not upload logo.");
-        });
+        }));
     },
 
     _uploadLogoContent: function (oContext, oBlob, sMediaType) {
       var sUrl = this._getServiceUrl() + oContext.getPath().replace(/^\//, "") + "/logoContent";
+      // Raw fetch(), not the OData model, so the model's auth header doesn't apply here.
       return fetch(sUrl, {
         method: "PUT",
-        headers: { "Content-Type": sMediaType || "image/png" },
+        headers: {
+          "Content-Type": sMediaType || "image/png",
+          "Authorization": "Bearer " + auth.getToken()
+        },
         body: oBlob,
         credentials: "same-origin"
       }).then(function (oResponse) {
@@ -346,15 +352,15 @@ sap.ui.define([
     },
 
     onUserRoleChange: function () {
-      this.getOwnerComponent().getModel().submitBatch(UPDATE_GROUP).then(function () {
+      busy.withBusy(this.getView(), this.getOwnerComponent().getModel().submitBatch(UPDATE_GROUP).then(function () {
         MessageToast.show("Role updated.");
-      });
+      }));
     },
 
     onToggleUserActive: function () {
-      this.getOwnerComponent().getModel().submitBatch(UPDATE_GROUP).then(function () {
+      busy.withBusy(this.getView(), this.getOwnerComponent().getModel().submitBatch(UPDATE_GROUP).then(function () {
         MessageToast.show("Status updated.");
-      });
+      }));
     },
 
     formatRoleLabel: function (sRole) {
@@ -372,12 +378,12 @@ sap.ui.define([
           var oModel = that.getOwnerComponent().getModel();
           var pDeleted = oContext.delete(UPDATE_GROUP);
           oModel.submitBatch(UPDATE_GROUP);
-          pDeleted.then(function () {
+          busy.withBusy(that.getView(), pDeleted.then(function () {
             MessageToast.show("User deleted.");
           }).catch(function (oError) {
             Log.error("User delete failed", oError);
             MessageBox.error("Could not delete the user.");
-          });
+          }));
         }
       });
     },
@@ -442,7 +448,8 @@ sap.ui.define([
           if (aRoles.indexOf(oCtx.getProperty("role")) === -1) { oCtx.delete(UPDATE_GROUP); }
         });
 
-        var oListBinding = oModel.bindList("/UserRoles");
+        // Same group as the deletes, so submitBatch(UPDATE_GROUP) below sends both.
+        var oListBinding = oModel.bindList("/UserRoles", undefined, undefined, undefined, { $$groupId: UPDATE_GROUP });
         aRoles.forEach(function (sRole) {
           if (aExisting.indexOf(sRole) === -1) { oListBinding.create({ userId: sUserId, role: sRole }); }
         });
@@ -453,16 +460,17 @@ sap.ui.define([
     },
 
     onResendPasswordSetup: function (oEvent) {
-      var sUserId = oEvent.getSource().getBindingContext().getProperty("userId");
+      var oButton = oEvent.getSource();
+      var sUserId = oButton.getBindingContext().getProperty("userId");
       var oAction = this.getOwnerComponent().getModel().bindContext("/sendPasswordSetup(...)");
 
       oAction.setParameter("userId", sUserId);
-      oAction.execute().then(function () {
+      busy.withBusy(oButton, oAction.execute().then(function () {
         MessageToast.show(oAction.getBoundContext().getValue());
       }).catch(function (oError) {
         Log.error("Password setup link failed", oError);
         MessageToast.show("Could not send the password setup link.");
-      });
+      }));
     },
 
     onSaveUser: function () {
@@ -486,21 +494,23 @@ sap.ui.define([
       var oModel = this.getOwnerComponent().getModel();
       var that = this;
 
+      var oDialog = this.byId("addUserDialog");
+
       if (this._oEditUserContext) {
         var sEditUserId = this._oEditUserContext.getProperty("userId");
         this._oEditUserContext.setProperty("name", sName);
         this._oEditUserContext.setProperty("role", sRole);
         this._oEditUserContext.setProperty("isActive", bActive);
-        oModel.submitBatch(UPDATE_GROUP).then(function () {
+        busy.withBusy(oDialog, oModel.submitBatch(UPDATE_GROUP).then(function () {
           return that._syncUserRoles(sEditUserId, aRoles);
         }).then(function () {
-          that.byId("addUserDialog").close();
+          oDialog.close();
           MessageToast.show("User updated.");
           that._oEditUserContext = null;
         }).catch(function (oError) {
           Log.error("User update failed", oError);
           MessageToast.show("Could not update user.");
-        });
+        }));
         return;
       }
 
@@ -513,18 +523,18 @@ sap.ui.define([
         client: this._sOrgCode
       });
 
-      oContext.created().then(function () {
+      busy.withBusy(oDialog, oContext.created().then(function () {
         // The backend already added the primary role and emailed the setup
         // link (srv/service.js after CREATE Users) — this adds the rest.
         return that._syncUserRoles(sEmail, aRoles);
       }).then(function () {
-        that.byId("addUserDialog").close();
+        oDialog.close();
         MessageToast.show("User created. A password setup link has been emailed to them.");
         that.byId("orgUsersTable").getBinding("items").refresh();
       }).catch(function (oError) {
         Log.error("User create failed", oError);
         MessageToast.show("Could not create user.");
-      });
+      }));
 
       // Same miss as Organizations.controller.js's onSaveOrganization had:
       // create() only queues the request, submitBatch is what actually
