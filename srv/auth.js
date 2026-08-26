@@ -18,6 +18,7 @@ const bcrypt = require("bcryptjs");
 const { SELECT, INSERT, UPDATE } = cds.ql;
 const { buildPasswordSetupEmailTemplate } = require("./email-templates");
 const { transporter, sendEmailSafe } = require("./ticket-helpers");
+const { themeForUser } = require("./email-theme");
 
 // ==================== CONFIG ====================
 
@@ -154,7 +155,7 @@ async function sendPasswordSetupEmail(user, isReset) {
     from: process.env.MAIL_FROM,
     to: user.email,
     subject: isReset ? "Reset your ITSM password" : "Set up your ITSM password",
-    html: buildPasswordSetupEmailTemplate(user, link, isReset, RESET_TOKEN_HOURS)
+    html: buildPasswordSetupEmailTemplate(user, link, isReset, RESET_TOKEN_HOURS, await themeForUser(user.userId))
   });
 }
 

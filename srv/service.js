@@ -2,9 +2,45 @@ const cds = require("@sap/cds");
 const { SELECT, INSERT, UPDATE } = cds.ql;
 const { buildConfirmationEmailTemplate, buildServiceGroupEmailTemplate, buildAssignmentEmailTemplate, buildEmail } = require("./email-templates");
 const { transporter, sendEmailSafe } = require("./ticket-helpers");
-const { Ticket, IncidentForm, TicketLog } = cds.entities("itsm.transaction");
+const { themeForTicket } = require("./email-theme");
+const { Ticket, IncidentForm, TicketLog, Attachment } = cds.entities("itsm.transaction");
 const { TicketCounter, User, UserRole, Organization } = cds.entities("itsm.master");
 const { sendPasswordSetupEmail } = require("./auth");
+
+// Files ride along with the notification so a recipient can open them from
+// the mail itself — the content endpoint is behind authentication, so a plain
+// link in an email would only ever return 401.
+const MAX_MAIL_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+async function streamToBuffer(stream) {
+    const chunks = [];
+    for await (const chunk of stream) { chunks.push(chunk); }
+    return Buffer.concat(chunks);
+}
+
+async function mailAttachments(tx, ticketID) {
+    const rows = await tx.run(SELECT.from(Attachment).where({ ticketID }));
+    const files = [];
+    let total = 0;
+
+    for (const row of rows) {
+        if (!row.content) { continue; }
+        try {
+            const buf = Buffer.isBuffer(row.content) ? row.content : await streamToBuffer(row.content);
+            // An oversized mail bounces outright, which is worse than a
+            // missing file the recipient can still fetch from the app.
+            if (total + buf.length > MAX_MAIL_ATTACHMENT_BYTES) {
+                console.warn(`[mail] ${row.fileName} not attached — size cap reached`);
+                continue;
+            }
+            total += buf.length;
+            files.push({ filename: row.fileName, content: buf, contentType: row.mediaType });
+        } catch (e) {
+            console.error(`[mail] could not read ${row.fileName}: ${e.message}`);
+        }
+    }
+    return files;
+}
 
 const reminderCooldown = {
     CRITICAL: 2,
@@ -214,12 +250,21 @@ async function onticketAction(req) {
                 SELECT.from(User).where({ role: "SERVICE_GROUP", isActive: true })
             );
 
+            // Branding follows the requester org, so every mail about this
+            // ticket looks the same whoever it is addressed to.
+            const theme = await themeForTicket(updatedTicket, tx);
+            const attachments = await tx.run(
+                SELECT.from(Attachment).columns("fileName", "mediaType", "fileSize").where({ ticketID })
+            );
+            const mailFiles = await mailAttachments(tx, ticketID);
+
             if (serviceGroupUsers.length) {
                 await sendEmailSafe(transporter, {
                     from: process.env.MAIL_FROM,
                     to: serviceGroupUsers.map(u => u.email),
                     subject: `New Ticket Submitted — ${updatedTicket.ticketNumber}`,
-                    html: buildServiceGroupEmailTemplate(updatedTicket)
+                    html: buildServiceGroupEmailTemplate(updatedTicket, theme, attachments),
+                    attachments: mailFiles
                 });
             } else {
                 console.warn("No active Service Group user found to notify");
@@ -230,7 +275,8 @@ async function onticketAction(req) {
                     from: process.env.MAIL_FROM,
                     to: originalUserEmail,
                     subject: `Your ticket ${updatedTicket.ticketNumber} has been submitted`,
-                    html: buildConfirmationEmailTemplate(updatedTicket)
+                    html: buildConfirmationEmailTemplate(updatedTicket, theme, attachments),
+                    attachments: mailFiles
                 });
             } else {
                 console.warn("Submitter email not found, confirmation mail skipped");
@@ -368,12 +414,19 @@ async function onticketAction(req) {
                 SELECT.one.from(Ticket).where({ ticketID })
             );
 
+            const theme = await themeForTicket(updatedTicket, tx);
+            const attachments = await tx.run(
+                SELECT.from(Attachment).columns("fileName", "mediaType", "fileSize").where({ ticketID })
+            );
+            const mailFiles = await mailAttachments(tx, ticketID);
+
             if (consultant.email) {
                 await sendEmailSafe(transporter, {
                     from: process.env.MAIL_FROM,
                     to: consultant.email,
                     subject: `Ticket Assigned — ${updatedTicket.ticketNumber}`,
-                    html: buildAssignmentEmailTemplate(updatedTicket, consultant.name)
+                    html: buildAssignmentEmailTemplate(updatedTicket, consultant.name, theme, attachments),
+                    attachments: mailFiles
                 });
             } else {
                 console.warn("Consultant email not found, assignment mail skipped");
@@ -831,7 +884,7 @@ async function sendTicketReminder(ticketID, req) {
         from: process.env.MAIL_FROM,
         to: recipient.emails,
         subject: `Reminder: Ticket ${ticket.ticketNumber || ticket.ticketID} is waiting for action`,
-        html: buildEmail("Reminder: Action Required", message, [ticket])
+        html: buildEmail("Reminder: Action Required", message, [ticket], await themeForTicket(ticket))
     });
 
     await INSERT.into(TicketLog).entries({
@@ -908,6 +961,10 @@ async function runDailyPendingActionEmails() {
             continue;
         }
 
+        // A batch can span organisations, so brand it only when it does not.
+        const requesters = [...new Set(item.tickets.map(x => x.reportedBy))];
+        const theme = requesters.length === 1 ? await themeForTicket(item.tickets[0]) : undefined;
+
         await sendEmailSafe(transporter, {
             from: process.env.MAIL_FROM,
             to: item.emails,
@@ -915,7 +972,8 @@ async function runDailyPendingActionEmails() {
             html: buildEmail(
                 "Pending Tickets",
                 `You have ${item.tickets.length} ticket(s) requiring your action.`,
-                item.tickets
+                item.tickets,
+                theme
             )
         });
     }
