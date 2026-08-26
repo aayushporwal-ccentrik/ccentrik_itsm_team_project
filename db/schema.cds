@@ -114,6 +114,8 @@ context master {
         lastNumber : Integer;
     }
  
+    // Prevents duplicate userId (repeated Admin "Add User" clicks used to allow it).
+    @assert.unique.userId: [userId]
     entity User : cuid, managed {
         userId   : String;
         name     : String;

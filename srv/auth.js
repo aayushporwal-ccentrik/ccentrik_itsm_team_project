@@ -278,6 +278,9 @@ async function onResetPassword(req, res) {
 // CAP custom auth. Anything without a valid token stays anonymous, so
 // @requires:'authenticated-user' rejects it with 401 — same as the
 // mocked/xsuaa kinds used to.
+// <img src> can't send an Authorization header, so logos (not sensitive) are exempt.
+const PUBLIC_GET_PATTERNS = [/\/logoContent(\?|$)/];
+
 function jwtAuth(req, res, next) {
   const token = readToken(req);
 
@@ -286,6 +289,8 @@ function jwtAuth(req, res, next) {
     req.user.email = token.email;
     req.user.roleCode = token.role;
     req.user.roleCodes = token.roles || [];
+  } else if (req.method === "GET" && PUBLIC_GET_PATTERNS.some(rx => rx.test(req.path))) {
+    req.user = new cds.User({ id: "public-asset-reader", roles: [] });
   } else {
     req.user = cds.User.anonymous;
   }

@@ -288,7 +288,7 @@
               <items>
                 <ColumnListItem>
                   <cells>
-                    <Link text="{attachments>fileName}" href="{attachments>contentUrl}" target="_blank"
+                    <Link text="{attachments>fileName}" press=".onDownloadAttachment"
                           enabled="{= !!${attachments>contentUrl} }"/>
                     <Text text="{attachments>uploadedBy}"/>
                     <Text text="{attachments>uploadedOn}"/>

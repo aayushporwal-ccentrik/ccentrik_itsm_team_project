@@ -3,8 +3,9 @@ sap.ui.define([
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageToast",
   "sap/base/Log",
-  "itsm/ui/model/userMenu"
-], function (Controller, JSONModel, MessageToast, Log, userMenu) {
+  "itsm/ui/model/userMenu",
+  "itsm/ui/model/busy"
+], function (Controller, JSONModel, MessageToast, Log, userMenu, busy) {
   "use strict";
 
   var UPDATE_GROUP = "incidentGroup";
@@ -101,16 +102,17 @@ sap.ui.define([
 
       var that = this;
       var oModel = this.getOwnerComponent().getModel();
+      var oDialog = this.byId("addOrgDialog");
       var oContext = oModel.bindList("/Organizations").create({ name: sName, code: sCode });
 
-      oContext.created().then(function () {
-        that.byId("addOrgDialog").close();
+      busy.withBusy(oDialog, oContext.created().then(function () {
+        oDialog.close();
         MessageToast.show("Organization created.");
         that._loadOrganizations();
       }).catch(function (oError) {
         Log.error("Organization create failed", oError);
         MessageToast.show("Could not create organization.");
-      });
+      }));
 
       // create() only queues the request on this batch group — nothing is
       // actually sent until submitBatch flushes it (same as everywhere else
