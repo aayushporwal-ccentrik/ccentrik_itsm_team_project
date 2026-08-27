@@ -124,6 +124,10 @@ context master {
         role     : String;   // primary/default role, kept as-is; UserRole below is what login actually reads
         client   : String;
 
+        // A user can hold several roles; UserRole is the real list and role
+        // above is only the primary one.
+        userRoles : Association to many UserRole on userRoles.userId = userId;
+
         // Never sent to the frontend - stripped in srv/service.js before READ Users.
         passwordHash : String(200);
     }

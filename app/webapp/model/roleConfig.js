@@ -169,7 +169,9 @@ sap.ui.define([], function () {
       showBack: true,
       showDelete: sPersona === "END_USER" && bDraft && !!bPersisted,
       showEdit: sPersona !== "END_USER" && !bCreate && !bEditing && !bDraft,
-      showSave: bActive,
+      // Service Group has Assign, which saves before it acts, so a separate
+      // Save would be a second way to do the same thing.
+      showSave: bActive && sPersona !== "SERVICE_GROUP",
       showSubmit: bCreate || (sPersona === "END_USER" && bDraft),
       saveLabel: "Save",
       saveEnabled: true,

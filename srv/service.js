@@ -246,9 +246,7 @@ async function onticketAction(req) {
                 SELECT.one.from(Ticket).where({ ticketID })
             );
 
-            const serviceGroupUsers = await tx.run(
-                SELECT.from(User).where({ role: "SERVICE_GROUP", isActive: true })
-            );
+            const serviceGroupUsers = await usersWithRole("SERVICE_GROUP");
 
             // Branding follows the requester org, so every mail about this
             // ticket looks the same whoever it is addressed to.
@@ -394,7 +392,7 @@ async function onticketAction(req) {
                 UPDATE(Ticket)
                     .set({
                         messageProcessor: consultant.userId,
-                        pendingWith: consultant.email,
+                        pendingWith: "Consultant",
                         pendingWithName: consultant.name,
                         status: "ASSIGNED",
                         subStatus: "IN_PROGRESS",
@@ -826,13 +824,23 @@ async function onReminderStatus(req) {
 // receive an email right now. Shared by sendTicketReminder (the bell) and
 // runDailyPendingActionEmails (the daily digest) so both agree on who's
 // "pending" for a given ticket.
+// A user can hold several roles (master.UserRole). User.role is only the
+// primary one, so filtering on it alone silently skips multi-role users.
+// Queried fresh on every call so users created after startup are included.
+async function usersWithRole(role) {
+    const users = await SELECT.from(User).where({ isActive: true });
+    const roleRows = await SELECT.from(UserRole).where({ role });
+    const ids = roleRows.map(row => row.userId);
+    return users.filter(user => ids.includes(user.userId) || user.role === role);
+}
+
 async function getPendingRecipient(ticket) {
     if (!ticket.pendingWith) {
         return null;
     }
 
     if (ticket.pendingWith === "Service Group") {
-        const users = await SELECT.from(User).where({ role: "SERVICE_GROUP", isActive: true });
+        const users = await usersWithRole("SERVICE_GROUP");
         return { type: "ServiceGroup", emails: users.map(u => u.email).filter(Boolean) };
     }
 
