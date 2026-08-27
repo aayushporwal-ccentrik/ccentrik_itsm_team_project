@@ -81,7 +81,13 @@ sap.ui.define([
     },
 
     onSaveDetails: function () {
+      var that = this;
       busy.withBusy(this.getView(), this.getOwnerComponent().getModel().submitBatch(UPDATE_GROUP).then(function () {
+        // code may have just changed — re-read it so new users get the
+        // current code, not the one this page loaded with (see _sOrgCode).
+        return that.getView().getBindingContext().requestProperty("code");
+      }).then(function (sCode) {
+        that._filterUsersByClient(sCode);
         MessageToast.show("Organization details saved.");
       }));
     },

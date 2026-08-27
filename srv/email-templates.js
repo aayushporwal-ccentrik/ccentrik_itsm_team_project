@@ -1,90 +1,126 @@
-
 "use strict";
 
-// ---------------- Email Template: EndUser Confirmation ----------------
-function buildConfirmationEmailTemplate(ticket) {
-    return `
-        <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-            <h2 style="color:#1F4E78;">Your Ticket Has Been Submitted</h2>
-            <p>Hi ${ticket.createdByName || "there"},</p>
-            <p>Your ticket has been successfully submitted. Our team will review it shortly.</p>
-            <table style="border-collapse: collapse; width: 100%;">
-                <tr><td style="padding:6px; font-weight:bold;">Ticket Number</td><td style="padding:6px;">${ticket.ticketNumber}</td></tr>
-                <tr><td style="padding:6px; font-weight:bold;">Ticket Type</td><td style="padding:6px;">${ticket.ticketType}</td></tr>
-                <tr><td style="padding:6px; font-weight:bold;">Description</td><td style="padding:6px;">${ticket.description}</td></tr>
-                <tr><td style="padding:6px; font-weight:bold;">Status</td><td style="padding:6px;">${ticket.status}</td></tr>
-            </table>
-            <p style="margin-top:16px;">You'll be notified once your ticket is assigned and progresses further.</p>
-        </div>
-    `;
+const {
+    buildTheme, renderShell, renderButton, renderRows, renderTable, escapeHtml
+} = require("./email-theme");
+
+const APP_URL = process.env.APP_URL || "";
+
+function ticketLink(ticket) {
+    return APP_URL && ticket?.ticketID ? `${APP_URL}/index.html#/detail/${encodeURIComponent(ticket.ticketID)}` : "";
 }
 
-// ---------------- Email Template: Service Group Notification ----------------
-function buildServiceGroupEmailTemplate(ticket) {
-    return `
-        <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-            <h2 style="color:#1F4E78;">New Ticket Submitted</h2>
-            <table style="border-collapse: collapse; width: 100%;">
-                <tr><td style="padding:6px; font-weight:bold;">Ticket Number</td><td style="padding:6px;">${ticket.ticketNumber}</td></tr>
-                <tr><td style="padding:6px; font-weight:bold;">Ticket Type</td><td style="padding:6px;">${ticket.ticketType}</td></tr>
-                <tr><td style="padding:6px; font-weight:bold;">Description</td><td style="padding:6px;">${ticket.description}</td></tr>
-                <tr><td style="padding:6px; font-weight:bold;">Status</td><td style="padding:6px;">${ticket.status}</td></tr>
-                <tr><td style="padding:6px; font-weight:bold;">Submitted By</td><td style="padding:6px;">${ticket.createdByName}</td></tr>
-                <tr><td style="padding:6px; font-weight:bold;">Location</td><td style="padding:6px;">${ticket.createdByLocation}</td></tr>
-                <tr><td style="padding:6px; font-weight:bold;">Organization</td><td style="padding:6px;">${ticket.orgName}</td></tr>
-            </table>
-            <p style="margin-top:16px;">Please review and assign this ticket to a Consultant.</p>
-        </div>
-    `;
+function fileSize(bytes) {
+    if (!bytes && bytes !== 0) { return ""; }
+    return bytes < 1024 ? `${bytes} B`
+        : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB`
+        : `${(bytes / 1048576).toFixed(1)} MB`;
 }
 
-// ---------------- Email Template: Assignment Notification ----------------
-// NOTE: This function ONLY builds and returns the HTML string.
-// It does NOT send the email itself — sending happens in service.js,
-// where the 'transporter' (nodemailer) instance actually lives.
-// This fixes the earlier bug: "ReferenceError: transporter is not defined".
-function buildAssignmentEmailTemplate(ticket, consultantName) {
-    return `
-        <html>
-        <body>
-            <p>Hello ${consultantName || "there"},</p>
-            <p>
-                Ticket <strong>${ticket.ticketNumber}</strong>
-                has been assigned to you.
-            </p>
-            <p>
-                Please log in to the ITSM application
-                to view and process the ticket.
-            </p>
-            <br>
-            <p>
-                Regards,<br>
-                ITSM System
-            </p>
-        </body>
-        </html>
-    `;
+// Uploaded documents block. Renders nothing when the caller passes no list,
+// so a template stays valid whether or not attachments were fetched.
+function documentsBlock(theme, attachments) {
+    if (!attachments || !attachments.length) { return ""; }
+    return `<div style="font-weight:bold;margin:18px 0 4px;">Uploaded Documents</div>`
+        + renderTable(theme, ["File", "Type", "Size"],
+            attachments.map(a => [a.fileName || "", a.mediaType || "", fileSize(a.fileSize)]));
 }
 
-// ---------------- Email Template: Password Setup / Reset ----------------
-function buildPasswordSetupEmailTemplate(user, link, isReset, validHours) {
-    return `
-        <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
-            <h2 style="color:#1F4E78;">${isReset ? "Reset Your Password" : "Welcome to ITSM"}</h2>
-            <p>Hi ${user.name || "there"},</p>
-            <p>${isReset
+function ticketRows(ticket) {
+    return [
+        { label: "Ticket Number", value: ticket.ticketNumber },
+        { label: "Ticket Type", value: ticket.ticketType },
+        { label: "Priority", value: ticket.priority },
+        { label: "Status", value: ticket.status },
+        { label: "Description", value: ticket.description }
+    ];
+}
+
+// ---------------- EndUser Confirmation ----------------
+function buildConfirmationEmailTemplate(ticket, theme, attachments) {
+    const t = theme || buildTheme(null);
+    return renderShell(t, {
+        title: "Your Ticket Has Been Submitted",
+        body: `
+            <p style="margin:0 0 12px;">Hi ${escapeHtml(ticket.createdByName || "there")},</p>
+            <p style="margin:0 0 16px;">Your ticket has been submitted successfully. Our team will review it shortly.</p>
+            ${renderRows(ticketRows(ticket))}
+            ${documentsBlock(t, attachments)}
+            ${renderButton(t, "View Your Ticket", ticketLink(ticket))}
+            <p style="margin:0;">You'll be notified once your ticket is assigned and progresses further.</p>`
+    });
+}
+
+// ---------------- Service Group Notification ----------------
+function buildServiceGroupEmailTemplate(ticket, theme, attachments) {
+    const t = theme || buildTheme(null);
+    return renderShell(t, {
+        title: "New Ticket Submitted",
+        body: `
+            <p style="margin:0 0 16px;">A new ticket needs review and assignment to a Consultant.</p>
+            ${renderRows([
+                ...ticketRows(ticket),
+                { label: "Submitted By", value: ticket.createdByName },
+                { label: "Location", value: ticket.createdByLocation },
+                { label: "Organization", value: ticket.orgName }
+            ])}
+            ${documentsBlock(t, attachments)}
+            ${renderButton(t, "Review Ticket", ticketLink(ticket))}`
+    });
+}
+
+// Builds the HTML only — sending happens in service.js, where the nodemailer
+// transporter lives.
+function buildAssignmentEmailTemplate(ticket, consultantName, theme, attachments) {
+    const t = theme || buildTheme(null);
+    return renderShell(t, {
+        title: "Ticket Assigned To You",
+        body: `
+            <p style="margin:0 0 12px;">Hello ${escapeHtml(consultantName || "there")},</p>
+            <p style="margin:0 0 16px;">Ticket <strong>${escapeHtml(ticket.ticketNumber || "")}</strong> has been assigned to you.</p>
+            ${renderRows(ticketRows(ticket))}
+            ${documentsBlock(t, attachments)}
+            ${renderButton(t, "Open Ticket", ticketLink(ticket))}
+            <p style="margin:0;">Please log in to the ITSM application to process this ticket.</p>`
+    });
+}
+
+// ---------------- Password Setup / Reset ----------------
+function buildPasswordSetupEmailTemplate(user, link, isReset, validHours, theme) {
+    const t = theme || buildTheme(null);
+    return renderShell(t, {
+        title: isReset ? "Reset Your Password" : "Welcome to ITSM",
+        body: `
+            <p style="margin:0 0 12px;">Hi ${escapeHtml(user.name || "there")},</p>
+            <p style="margin:0 0 16px;">${isReset
                 ? "We received a request to reset your ITSM password."
                 : "An account has been created for you on the ITSM Service Desk."}
-               Click the button below to ${isReset ? "choose a new password" : "set your password"}.</p>
-            <p style="margin:24px 0;">
-                <a href="${link}" style="background:#021a86; color:#ffffff; padding:10px 20px; border-radius:4px; text-decoration:none;">
-                    ${isReset ? "Reset Password" : "Set Password"}
-                </a>
-            </p>
-            <p>This link is valid for ${validHours} hours and can be used only once.</p>
-            <p style="color:#777;">If you didn't expect this email, you can safely ignore it.</p>
-        </div>
-    `;
+               Use the button below to ${isReset ? "choose a new password" : "set your password"}.</p>
+            ${renderButton(t, isReset ? "Reset Password" : "Set Password", link)}
+            <p style="margin:0 0 12px;">This link is valid for ${escapeHtml(validHours)} hours and can be used only once.</p>
+            <p style="margin:0;color:#6d7a95;">If you didn't expect this email, you can safely ignore it.</p>`,
+        footerNote: "If the button doesn't work, copy this link into your browser: " + (link || "")
+    });
+}
+
+// ---------------- Reminder / daily digest ----------------
+function buildEmail(title, message, tickets, theme) {
+    const t = theme || buildTheme(null);
+    const rows = (tickets || []).map(x => [
+        x.ticketNumber || x.ticketID || "",
+        x.shortDescription || "",
+        x.priority || "",
+        x.status || ""
+    ]);
+    const single = tickets && tickets.length === 1 ? tickets[0] : null;
+    return renderShell(t, {
+        title,
+        body: `
+            <p style="margin:0 0 16px;">${escapeHtml(message)}</p>
+            ${renderTable(t, ["Ticket", "Description", "Priority", "Status"], rows)}
+            ${single ? renderButton(t, "Open Ticket", ticketLink(single)) : ""}
+            <p style="margin:0;">Please log in to the ITSM application to action these tickets.</p>`
+    });
 }
 
 module.exports = {
@@ -94,34 +130,3 @@ module.exports = {
     buildPasswordSetupEmailTemplate,
     buildEmail
 };
-
- 
-function buildEmail(title, message, tickets) {
-    return `
-<div style="font-family: Arial; font-size: 14px; color: #333;">
-<h2>${title}</h2>
-<p>${message}</p>
- 
-            <table style="border-collapse: collapse; width: 100%;">
-<tr>
-<th>Ticket</th>
-<th>Description</th>
-<th>Priority</th>
-<th>Status</th>
-</tr>
- 
-                ${tickets.map(ticket => `
-<tr>
-<td>${ticket.ticketNumber || ticket.ticketID}</td>
-<td>${ticket.shortDescription || ""}</td>
-<td>${ticket.priority || ""}</td>
-<td>${ticket.status || ""}</td>
-</tr>
-                `).join("")}
-</table>
- 
-            <p>Please log in to the ITSM application to action these tickets.</p>
-</div>
-    `;
-}
- 

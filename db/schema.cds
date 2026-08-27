@@ -124,6 +124,10 @@ context master {
         role     : String;   // primary/default role, kept as-is; UserRole below is what login actually reads
         client   : String;
 
+        // A user can hold several roles; UserRole is the real list and role
+        // above is only the primary one.
+        userRoles : Association to many UserRole on userRoles.userId = userId;
+
         // Set only when AUTH_PROVIDER=cognito - the Cognito user's "sub",
         // which is what links that identity to this row.
         cognitoUserId : String(64);

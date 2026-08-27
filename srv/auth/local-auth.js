@@ -19,6 +19,7 @@ const { SELECT, INSERT, UPDATE } = cds.ql;
 const { buildPasswordSetupEmailTemplate } = require("../email-templates");
 const { transporter, sendEmailSafe } = require("../ticket-helpers");
 const { CDS_ROLE_BY_CODE } = require("./roles");
+const { themeForUser } = require("../email-theme");
 
 // ==================== CONFIG ====================
 
@@ -146,7 +147,7 @@ async function sendPasswordSetupEmail(user, isReset) {
     from: process.env.MAIL_FROM,
     to: user.email,
     subject: isReset ? "Reset your ITSM password" : "Set up your ITSM password",
-    html: buildPasswordSetupEmailTemplate(user, link, isReset, RESET_TOKEN_HOURS)
+    html: buildPasswordSetupEmailTemplate(user, link, isReset, RESET_TOKEN_HOURS, await themeForUser(user.userId))
   });
 }
 
@@ -228,7 +229,11 @@ async function onSelectRole(req, res) {
 async function onForgotPassword(req, res) {
   const email = String(req.body.email || "").trim().toLowerCase();
   const { User } = cds.entities("itsm.master");
-  const user = email ? await SELECT.one.from(User).where({ email }) : null;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return res.status(400).json({ message: "Please enter a valid email address." });
+  }
+
+  const user = await SELECT.one.from(User).where({ email });
 
   if (user && user.isActive) {
     await sendPasswordSetupEmail(user, true);

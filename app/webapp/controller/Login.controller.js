@@ -10,6 +10,13 @@ sap.ui.define([
 
   return Controller.extend("itsm.ui.controller.Login", {
 
+    onTogglePassword: function (oEvent) {
+      var oInput = oEvent.getSource();
+      var bHidden = oInput.getType() === "Password";
+      oInput.setType(bHidden ? "Text" : "Password");
+      oInput.setValueHelpIconSrc(bHidden ? "sap-icon://hide" : "sap-icon://show");
+    },
+
     onInit: function () {
       var oRouter = this.getOwnerComponent().getRouter();
       oRouter.getRoute("login").attachPatternMatched(this._onShowLogin, this);

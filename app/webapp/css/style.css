@@ -1035,7 +1035,10 @@ html[data-theme-scope="background"] .sapMITBSelected .sapMITBText { color: var(-
 
 .authLink { display: block; margin-top: 12px; font-size: 13px; }
 .authButton { margin-top: 22px; }
-.authButton .sapMBtnInner { height: 46px !important; border-radius: 10px !important; }
+.authButton .sapMBtnInner {
+  height: 46px !important; border-radius: 10px !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+}
 .authButton .sapMBtnContent, .authButton bdi { font-size: 15px !important; font-weight: 600 !important; }
 
 /* Laptop needs real width to read — below this it stacks under the copy,

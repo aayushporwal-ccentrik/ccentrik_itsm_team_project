@@ -186,6 +186,9 @@
               type="Password"
               placeholder="Enter your password"
               submit=".onLogin"
+              showValueHelp="true"
+              valueHelpIconSrc="sap-icon://show"
+              valueHelpRequest=".onTogglePassword"
               class="authInput"/>
 
             <Link
@@ -261,10 +264,14 @@
               </VBox>
 
               <Label text="New Password" labelFor="newPassword" class="authFieldLabel"/>
-              <Input id="newPassword" type="Password" submit=".onResetPassword" class="authInput"/>
+              <Input id="newPassword" type="Password" submit=".onResetPassword"
+                showValueHelp="true" valueHelpIconSrc="sap-icon://show" valueHelpRequest=".onTogglePassword"
+                class="authInput"/>
 
               <Label text="Confirm Password" labelFor="confirmPassword" class="authFieldLabel"/>
-              <Input id="confirmPassword" type="Password" submit=".onResetPassword" class="authInput"/>
+              <Input id="confirmPassword" type="Password" submit=".onResetPassword"
+                showValueHelp="true" valueHelpIconSrc="sap-icon://show" valueHelpRequest=".onTogglePassword"
+                class="authInput"/>
 
               <Button
                 id="resetButton"
