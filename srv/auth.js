@@ -236,8 +236,13 @@ async function onSelectRole(req, res) {
 
 async function onForgotPassword(req, res) {
   const email = String(req.body.email || "").trim().toLowerCase();
+
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return res.status(400).json({ message: "Please enter a valid email address." });
+  }
+
   const { User } = cds.entities("itsm.master");
-  const user = email ? await SELECT.one.from(User).where({ email }) : null;
+  const user = await SELECT.one.from(User).where({ email });
 
   if (user && user.isActive) {
     await sendPasswordSetupEmail(user, true);
