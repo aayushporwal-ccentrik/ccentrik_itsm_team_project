@@ -181,12 +181,17 @@
               class="authInput"/>
 
             <Label text="Password" labelFor="loginPassword" class="authFieldLabel"/>
-            <Input
-              id="loginPassword"
-              type="Password"
-              placeholder="Enter your password"
-              submit=".onLogin"
-              class="authInput"/>
+            <VBox class="authPasswordField">
+              <Input
+                id="loginPassword"
+                type="Password"
+                placeholder="Enter your password"
+                submit=".onLogin"
+                class="authInput"/>
+              <Button icon="sap-icon://show" type="Transparent" press=".onTogglePassword" class="authPasswordToggle">
+                <customData><core:CustomData key="target" value="loginPassword"/></customData>
+              </Button>
+            </VBox>
 
             <Link
               text="Forgot Password?"
@@ -249,10 +254,20 @@
                  confirmation and the Go To Login button. -->
             <VBox id="resetForm">
               <Label text="New Password" labelFor="newPassword" class="authFieldLabel"/>
-              <Input id="newPassword" type="Password" submit=".onResetPassword" class="authInput"/>
+              <VBox class="authPasswordField">
+                <Input id="newPassword" type="Password" submit=".onResetPassword" class="authInput"/>
+                <Button icon="sap-icon://show" type="Transparent" press=".onTogglePassword" class="authPasswordToggle">
+                  <customData><core:CustomData key="target" value="newPassword"/></customData>
+                </Button>
+              </VBox>
 
               <Label text="Confirm Password" labelFor="confirmPassword" class="authFieldLabel"/>
-              <Input id="confirmPassword" type="Password" submit=".onResetPassword" class="authInput"/>
+              <VBox class="authPasswordField">
+                <Input id="confirmPassword" type="Password" submit=".onResetPassword" class="authInput"/>
+                <Button icon="sap-icon://show" type="Transparent" press=".onTogglePassword" class="authPasswordToggle">
+                  <customData><core:CustomData key="target" value="confirmPassword"/></customData>
+                </Button>
+              </VBox>
 
               <Button
                 id="resetButton"
