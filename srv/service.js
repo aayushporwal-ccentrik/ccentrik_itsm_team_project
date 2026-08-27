@@ -1,10 +1,11 @@
 const cds = require("@sap/cds");
-const { SELECT, INSERT, UPDATE } = cds.ql;
+const { SELECT, INSERT, UPDATE, DELETE } = cds.ql;
 const { buildConfirmationEmailTemplate, buildServiceGroupEmailTemplate, buildAssignmentEmailTemplate, buildEmail } = require("./email-templates");
 const { transporter, sendEmailSafe } = require("./ticket-helpers");
 const { Ticket, IncidentForm, TicketLog } = cds.entities("itsm.transaction");
 const { TicketCounter, User, UserRole, Organization } = cds.entities("itsm.master");
-const { sendPasswordSetupEmail } = require("./auth");
+const auth = require("./auth");
+const { sendPasswordSetupEmail } = auth;
 
 const reminderCooldown = {
     CRITICAL: 2,
@@ -36,6 +37,7 @@ module.exports = cds.service.impl(function () {
   this.before("UPDATE", "Organizations", onBeforeUpdateOrganization);
   this.before("CREATE", "Users", onBeforeCreateUser);
   this.after("CREATE", "Users", onAfterCreateUser);
+  this.before("UPDATE", "Users", onBeforeUpdateUser);
   this.after("READ", "Tickets", onAfterReadTickets);
 });
 
@@ -348,7 +350,12 @@ async function onticketAction(req) {
                 UPDATE(Ticket)
                     .set({
                         messageProcessor: consultant.userId,
-                        pendingWith: consultant.email,
+                        // A role label, not an email — getPendingRecipient()
+                        // matches on "Service Group" / "Consultant" / "Agent"
+                        // and resolves the person via messageProcessor. An
+                        // email here silently kills the reminder bell and the
+                        // daily digest for every assigned ticket.
+                        pendingWith: "Consultant",
                         pendingWithName: consultant.name,
                         status: "ASSIGNED",
                         subStatus: "IN_PROGRESS",
@@ -619,8 +626,45 @@ async function onAfterCreateUser(oUser, req) {
     }
   }
 
-  if (oUser.email) {
-    await sendPasswordSetupEmail(oUser, false);
+  if (!oUser.email) { return; }
+
+  // With Cognito the identity has to exist there too, and the invite mail it
+  // sends replaces our own password setup mail. If Cognito refuses, the ITSM
+  // row would be an account nobody can log in to, so it is removed again.
+  if (auth.createUser) {
+    try {
+      const sub = await auth.createUser(oUser, oUser.role ? [oUser.role] : []);
+      await UPDATE(User).set({ cognitoUserId: sub }).where({ userId: oUser.userId });
+    } catch (error) {
+      await DELETE.from(User).where({ userId: oUser.userId });
+      await DELETE.from(UserRole).where({ userId: oUser.userId });
+      return req.error(400, `Could not create the user in Cognito: ${error.name || "unknown error"}`);
+    }
+    return;
+  }
+
+  await sendPasswordSetupEmail(oUser, false);
+}
+
+// Keeps Cognito in step when an admin changes a user's role or deactivates
+// them. Local mode has nothing to sync, so this only acts when the Cognito
+// provider is loaded.
+async function onBeforeUpdateUser(req) {
+  if (!auth.setUserRoles) { return; }
+
+  const userId = req.data.userId || req.params?.[0]?.userId || req.params?.[0];
+  const oUser = await SELECT.one.from(User).where({ userId });
+  if (!oUser) { return; }
+
+  try {
+    if (req.data.role && req.data.role !== oUser.role) {
+      await auth.setUserRoles(oUser, [req.data.role]);
+    }
+    if (req.data.isActive !== undefined && req.data.isActive !== oUser.isActive) {
+      await auth.setUserActive(oUser, req.data.isActive);
+    }
+  } catch (error) {
+    return req.error(400, `Could not update the user in Cognito: ${error.name || "unknown error"}`);
   }
 }
 

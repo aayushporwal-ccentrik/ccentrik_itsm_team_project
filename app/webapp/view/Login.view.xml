@@ -248,6 +248,18 @@
             <!-- Hidden once the reset succeeds, so the only thing left is the
                  confirmation and the Go To Login button. -->
             <VBox id="resetForm">
+              <!-- Only shown when the code was emailed instead of a link.
+                   Hidden when a link carried the token in the URL, and when
+                   a new user is setting their first password. -->
+              <VBox id="resetCodeRow" visible="false">
+                <Label text="Verification Code" labelFor="resetCode" class="authFieldLabel"/>
+                <Input
+                  id="resetCode"
+                  placeholder="Code from the email"
+                  submit=".onResetPassword"
+                  class="authInput"/>
+              </VBox>
+
               <Label text="New Password" labelFor="newPassword" class="authFieldLabel"/>
               <Input id="newPassword" type="Password" submit=".onResetPassword" class="authInput"/>
 
