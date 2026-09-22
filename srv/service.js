@@ -70,6 +70,7 @@ module.exports = cds.service.impl(function () {
   this.on("runDailyPendingActionEmails", onRunDailyPendingActionEmails);
   this.before("CREATE", "Tickets", onBeforeCreateTicket);
   this.before("UPDATE", "Tickets", onBeforeUpdateTicket);
+  this.before("READ", "Tickets", onBeforeReadTickets);
   this.before("UPDATE", "Organizations", onBeforeUpdateOrganization);
   this.before("CREATE", "Users", onBeforeCreateUser);
   this.after("CREATE", "Users", onAfterCreateUser);
@@ -258,7 +259,7 @@ async function onticketAction(req) {
                 SELECT.one.from(Ticket).where({ ticketID })
             );
 
-            const serviceGroupUsers = await usersWithRole("SERVICE_GROUP");
+            const serviceGroupUsers = await serviceGroupRecipientsForTicket(updatedTicket);
 
             // Branding follows the requester org, so every mail about this
             // ticket looks the same whoever it is addressed to.
@@ -761,6 +762,18 @@ async function resolveUserTheme(sUserId) {
     formBtnTextColor: oOrg.formBtnTextColor
   };
 }
+// Org-scopes Service Group/Consultant: they only see tickets whose reporter
+// is from their own org (User.client). Blank client = ccentrik-wide staff,
+// unrestricted, same as today.
+async function onBeforeReadTickets(req) {
+  if (!req.user.is("ServiceGroup") && !req.user.is("Consultant")) { return; }
+
+  const me = await SELECT.one.from(User).where({ userId: req.user.id });
+  if (!me || !me.client) { return; }
+
+  req.query.where({ "reportedByUser.client": me.client });
+}
+
 async function onBeforeCreateTicket(req) {
   const ticket = req.data;
   const identifiers = await generateTicketIdentifiers(ticket.ticketType);
@@ -888,13 +901,25 @@ async function usersWithRole(role) {
     return users.filter(user => ids.includes(user.userId) || user.role === role);
 }
 
+// Same org-scoping as onBeforeReadTickets: a Service Group member with an
+// org (client) set only hears about that org's tickets; blank client
+// (ccentrik-wide staff) hears about every org, same as they see every org.
+async function serviceGroupRecipientsForTicket(ticket) {
+    const users = await usersWithRole("SERVICE_GROUP");
+    const reporter = ticket.reportedBy
+        ? await SELECT.one.from(User).where({ userId: ticket.reportedBy })
+        : null;
+    if (!reporter || !reporter.client) { return users; }
+    return users.filter(u => !u.client || u.client === reporter.client);
+}
+
 async function getPendingRecipient(ticket) {
     if (!ticket.pendingWith) {
         return null;
     }
 
     if (ticket.pendingWith === "Service Group") {
-        const users = await usersWithRole("SERVICE_GROUP");
+        const users = await serviceGroupRecipientsForTicket(ticket);
         return { type: "ServiceGroup", emails: users.map(u => u.email).filter(Boolean) };
     }
 
@@ -1001,13 +1026,17 @@ async function runDailyPendingActionEmails() {
             continue;
         }
 
-        // Service Group gets one shared email listing every ticket pending
-        // with the team, not one email per ticket.
+        // Service Group gets one shared email per distinct recipient set, not
+        // one per ticket — but that recipient set is now org-scoped (see
+        // serviceGroupRecipientsForTicket), so two tickets from different
+        // orgs can land with two different Service Group audiences and must
+        // not be merged into the same bucket/key.
         if (recipient.type === "ServiceGroup") {
-            if (!pending.ServiceGroup) {
-                pending.ServiceGroup = { emails: recipient.emails, type: "ServiceGroup", tickets: [] };
+            const key = "ServiceGroup_" + recipient.emails.slice().sort().join(",");
+            if (!pending[key]) {
+                pending[key] = { emails: recipient.emails, type: "ServiceGroup", tickets: [] };
             }
-            pending.ServiceGroup.tickets.push(ticket);
+            pending[key].tickets.push(ticket);
             continue;
         }
 

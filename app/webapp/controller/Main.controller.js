@@ -1,6 +1,8 @@
 sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
+  "sap/ui/model/Filter",
+  "sap/ui/model/FilterOperator",
   "sap/m/MessageToast",
   "sap/m/MessageBox",
   "sap/base/Log",
@@ -10,7 +12,7 @@ sap.ui.define([
   "itsm/ui/model/auth",
   "itsm/ui/model/busy",
   "itsm/ui/model/createGuard"
-], function (Controller, JSONModel, MessageToast, MessageBox, Log, getTicketFormUiModel, formatter, fetchLookup, auth, busy, createGuard) {
+], function (Controller, JSONModel, Filter, FilterOperator, MessageToast, MessageBox, Log, getTicketFormUiModel, formatter, fetchLookup, auth, busy, createGuard) {
   "use strict";
 
   var UPDATE_GROUP = "incidentGroup";
@@ -120,7 +122,7 @@ sap.ui.define([
       var oContext = this.getView().getModel().bindContext(
         "/Tickets(ticketID='" + sId + "')",
         undefined,
-        { $expand: "incidentForm,attachments" }
+        { $expand: "incidentForm,attachments,reportedByUser" }
       ).getBoundContext();
 
       this.getView().setBindingContext(oContext);
@@ -129,10 +131,22 @@ sap.ui.define([
       return oContext.requestObject().then(function (oTicket) {
         that._refreshUiModel(oTicket.status);
         that._setAttachmentsModel(oTicket.attachments, oContext);
+        that._scopeConsultantPicker(oTicket.reportedByUser && oTicket.reportedByUser.client);
         if (that.getView().getModel("ui").getProperty("/showReminder")) {
           return that._refreshReminderStatus(sId);
         }
       });
+    },
+
+    // Assign picker only offers Consultants from the reporter's own org —
+    // a blank org (ccentrik-wide staff) leaves the list unrestricted, same
+    // as the backend's org-scoping for Service Group/Consultant (service.js).
+    _scopeConsultantPicker: function (sClient) {
+      var oSelect = this.byId("messageProcessorSelect");
+      if (!oSelect) { return; }
+      var oBinding = oSelect.getBinding("items");
+      if (!oBinding) { return; }
+      oBinding.filter(sClient ? [new Filter("client", FilterOperator.EQ, sClient)] : []);
     },
 
     // Bell's enabled state + tooltip, refreshed whenever the ticket
