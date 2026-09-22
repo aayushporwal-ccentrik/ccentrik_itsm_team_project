@@ -73,7 +73,17 @@ module.exports = cds.service.impl(function () {
   this.before("CREATE", "Users", onBeforeCreateUser);
   this.after("CREATE", "Users", onAfterCreateUser);
   this.after("READ", "Tickets", onAfterReadTickets);
+  this.on("error", onServiceError);
 });
+
+// @assert.unique on User.userId (schema.cds) throws a raw SQL error —
+// this rewrites it into something the Admin panel can show directly.
+function onServiceError(err) {
+  if (err.code === "SQLITE_CONSTRAINT_UNIQUE" && /User\.userId/.test(err.message)) {
+    err.message = "A user with this email already exists.";
+    err.code = 409;
+  }
+}
 
 
  

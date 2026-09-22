@@ -8,8 +8,9 @@ sap.ui.define([
   "itsm/ui/model/formatter",
   "itsm/ui/model/lookupValues",
   "itsm/ui/model/auth",
-  "itsm/ui/model/busy"
-], function (Controller, JSONModel, MessageToast, MessageBox, Log, getTicketFormUiModel, formatter, fetchLookup, auth, busy) {
+  "itsm/ui/model/busy",
+  "itsm/ui/model/createGuard"
+], function (Controller, JSONModel, MessageToast, MessageBox, Log, getTicketFormUiModel, formatter, fetchLookup, auth, busy, createGuard) {
   "use strict";
 
   var UPDATE_GROUP = "incidentGroup";
@@ -77,6 +78,9 @@ sap.ui.define([
         reportedBy: this._getUserName(),
         incidentForm: {}
       });
+      // Fires whenever Save/Submit actually sends this — see createGuard.js
+      // for why created().catch() alone can't be trusted for this.
+      createGuard.guard(oListBinding, oContext, this.getView());
       this._oPendingCreateContext = oContext;
 
       this.getView().setBindingContext(oContext);
@@ -221,6 +225,7 @@ sap.ui.define([
           MessageToast.show("Ticket saved");
         }
       }).catch(function (oError) {
+        if (oError.canceled) { return; } // already shown by createGuard
         // Logged, not just shown as a generic toast — otherwise "request
         // never sent" and "request sent, server rejected it" look identical
         // from the outside, which is exactly what made an earlier bug here
@@ -254,6 +259,7 @@ sap.ui.define([
           onClose: function () { that._navHome(); }
         });
       }).catch(function (oError) {
+        if (oError.canceled) { return; } // already shown by createGuard
         Log.error("Ticket submit failed", oError);
         MessageBox.error(that._actionErrorText(oError) || "Could not submit the ticket. Please check the required fields.");
       }));
