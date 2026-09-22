@@ -142,9 +142,18 @@ async function groupsOf(username) {
 
 const userBySub = new Map();
 
+// forgetUser() clears this instantly on the instance that made the change
+// (admin edits a role, deactivates someone), but AWS runs more than one
+// instance (Lambda concurrency, ECS tasks) — a warm instance that never got
+// that call would otherwise keep serving a deactivated/stale user forever.
+// A short TTL bounds that staleness on every instance, not just the one
+// that happened to handle the admin's request.
+const USER_CACHE_TTL_MS = 60 * 1000;
+
 async function itsmUser(sub, email) {
-    if (userBySub.has(sub)) {
-        return userBySub.get(sub);
+    const cached = userBySub.get(sub);
+    if (cached && Date.now() - cached.cachedAt < USER_CACHE_TTL_MS) {
+        return cached.entry;
     }
 
     const { User } = cds.entities("itsm.master");
@@ -181,7 +190,7 @@ async function itsmUser(sub, email) {
         isActive: user.isActive
     };
 
-    userBySub.set(sub, entry);
+    userBySub.set(sub, { entry, cachedAt: Date.now() });
 
     return entry;
 }
@@ -580,8 +589,11 @@ async function onSelectRole(req, res) {
         req.body.role || ""
     );
 
+    // Checked against Cognito's live group membership, not the token's own
+    // "cognito:groups" claim — that claim was frozen at login and would
+    // still let a since-revoked role through until the token expires.
     const roles = rolesFromGroups(
-        payload["cognito:groups"]
+        await groupsOf(payload.email)
     );
 
     if (!roles.includes(role)) {

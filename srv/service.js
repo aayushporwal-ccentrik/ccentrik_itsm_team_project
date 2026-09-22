@@ -75,14 +75,29 @@ module.exports = cds.service.impl(function () {
   this.before("CREATE", "Users", onBeforeCreateUser);
   this.after("CREATE", "Users", onAfterCreateUser);
   this.before("UPDATE", "Users", onBeforeUpdateUser);
+  this.after("CREATE", "UserRoles", onAfterUserRoleChange);
+  this.before("DELETE", "UserRoles", onBeforeDeleteUserRole);
+  this.after("DELETE", "UserRoles", onAfterUserRoleChange);
   this.after("READ", "Tickets", onAfterReadTickets);
   this.on("error", onServiceError);
 });
 
-// @assert.unique on User.userId (schema.cds) throws a raw SQL error —
-// this rewrites it into something the Admin panel can show directly.
+// @assert.unique on User.userId (schema.cds) throws a raw SQL error — this
+// rewrites it into something the Admin panel can show directly. The error
+// code is driver-specific (SQLite vs Postgres vs HANA each use their own),
+// so it's checked against all three rather than the one local dev runs on.
+// CAP's "error" event only hands the handler cds.context here, not the
+// failing req, so there's no req.target to confirm which entity/constraint
+// this was — matched on the code alone instead, which is safe today because
+// User.userId is the only @assert.unique in the whole schema (see schema.cds).
+// If a second one is ever added elsewhere, this will need to tell them apart.
+const UNIQUE_CONSTRAINT_CODES = new Set([
+  "SQLITE_CONSTRAINT_UNIQUE", // sqlite (local dev)
+  "23505",                    // postgres (unique_violation) — AWS target
+  "301"                       // hana (unique constraint violated)
+]);
 function onServiceError(err) {
-  if (err.code === "SQLITE_CONSTRAINT_UNIQUE" && /User\.userId/.test(err.message)) {
+  if (UNIQUE_CONSTRAINT_CODES.has(err.code)) {
     err.message = "A user with this email already exists.";
     err.code = 409;
   }
@@ -711,23 +726,56 @@ async function onAfterCreateUser(oUser, req) {
 // Keeps Cognito in step when an admin changes a user's role or deactivates
 // them. Local mode has nothing to sync, so this only acts when the Cognito
 // provider is loaded.
+// Role sync to Cognito happens off the UserRoles table (onAfterUserRoleChange
+// below), not here — a user can hold several roles (master.UserRole), and
+// req.data.role on a Users PATCH is only ever the primary one. Syncing just
+// that single role to Cognito would tell it to drop every other group the
+// user actually still has.
 async function onBeforeUpdateUser(req) {
-  if (!auth.setUserRoles) { return; }
+  if (!auth.setUserActive) { return; }
 
   const userId = req.data.userId || req.params?.[0]?.userId || req.params?.[0];
   const oUser = await SELECT.one.from(User).where({ userId });
   if (!oUser) { return; }
 
   try {
-    if (req.data.role && req.data.role !== oUser.role) {
-      await auth.setUserRoles(oUser, [req.data.role]);
-    }
     if (req.data.isActive !== undefined && req.data.isActive !== oUser.isActive) {
       await auth.setUserActive(oUser, req.data.isActive);
     }
   } catch (error) {
     return req.error(400, `Could not update the user in Cognito: ${error.name || "unknown error"}`);
   }
+}
+
+// UserRoles is where the real multi-role list lives — synced here as a whole
+// (not per-row) so Cognito's group membership always ends up matching every
+// role the user currently holds, not just whichever row triggered the change.
+async function onAfterUserRoleChange(data, req) {
+  if (!auth.setUserRoles) { return; }
+
+  const userId = (data && data.userId) || req._userRoleUserId;
+  if (!userId) { return; }
+
+  const oUser = await SELECT.one.from(User).where({ userId });
+  if (!oUser) { return; }
+
+  const roleRows = await SELECT.from(UserRole).where({ userId });
+  const roles = [...new Set(roleRows.map(row => row.role))];
+
+  try {
+    await auth.setUserRoles(oUser, roles);
+  } catch (error) {
+    return req.error(400, `Could not sync roles to Cognito: ${error.name || "unknown error"}`);
+  }
+}
+
+// DELETE has no body — the row (and its userId) has to be read before it's
+// gone, then handed to onAfterUserRoleChange once it actually is.
+async function onBeforeDeleteUserRole(req) {
+  const key = req.params?.[0];
+  if (!key) { return; }
+  const row = await SELECT.one.from(UserRole).where(key);
+  req._userRoleUserId = row?.userId;
 }
 
 async function onSendPasswordSetup(req) {
@@ -821,21 +869,36 @@ async function onBeforeUpdateOrganization(req) {
     await UPDATE(User).set({ client: req.data.code }).where({ client: oOrg.code });
   }
 }
+// Read-lastNumber-then-write-lastNumber+1 races under real concurrent
+// writers: two requests can read the same value before either writes back,
+// producing two tickets with the same number (and then a primary-key clash
+// on Ticket.ticketID itself). SQLite's local dev writes are effectively
+// serialized so this never showed up here — Postgres' connection pool
+// under AWS actually runs requests concurrently, so it would. Fixed with an
+// atomic "SET lastNumber = lastNumber + 1" — the increment and the read of
+// its own new value happen as one statement, so a second concurrent request
+// has to wait for this row's lock instead of racing it.
 async function generateTicketIdentifiers(sTicketType) {
   const sType = (sTicketType || "GENERAL").trim().toUpperCase();
- 
-  let oCounter = await SELECT.one.from(TicketCounter).where({ type: sType });
-  if (!oCounter) {
-    oCounter = { type: sType, lastNumber: 1 };
-    await INSERT.into(TicketCounter).entries(oCounter);
-  } else {
-    oCounter.lastNumber++;
-    await UPDATE(TicketCounter).set({ lastNumber: oCounter.lastNumber }).where({ type: sType });
+
+  let nUpdated = await UPDATE(TicketCounter).set("lastNumber = lastNumber + 1").where({ type: sType });
+  if (!nUpdated) {
+    // First ticket ever of this type — no row to increment yet. Two
+    // requests can both land here at once, so if the insert loses that
+    // race (row already exists by the time it runs), fall back to the
+    // same atomic increment rather than erroring out.
+    try {
+      await INSERT.into(TicketCounter).entries({ type: sType, lastNumber: 1 });
+    } catch (e) {
+      nUpdated = await UPDATE(TicketCounter).set("lastNumber = lastNumber + 1").where({ type: sType });
+      if (!nUpdated) { throw e; }
+    }
   }
- 
+
+  const oCounter = await SELECT.one.from(TicketCounter).where({ type: sType });
   const sPrefix = PREFIX_BY_TYPE[sType] || sType.slice(0, 3);
   const sNumber = sPrefix + "-" + String(oCounter.lastNumber).padStart(5, "0");
- 
+
   return { ticketID: sNumber, ticketNumber: sNumber };
 }
 
