@@ -28,6 +28,8 @@ sap.ui.define([], function () {
     var oHeaders = { "Content-Type": "application/json" };
     var sToken = auth.getToken();
     if (sToken) { oHeaders.Authorization = "Bearer " + sToken; }
+    var sRole = auth.getRole();
+    if (sRole) { oHeaders["X-Active-Role"] = sRole; }
 
     return fetch("/auth/" + sPath, {
       method: "POST",
@@ -74,7 +76,11 @@ sap.ui.define([], function () {
 
     login: function (sEmail, sPassword) {
       return post("login", { email: sEmail, password: sPassword }).then(function (oData) {
-        auth.setSession(oData.token, oData.role);
+        // A brand new user has to choose a password before any token
+        // exists, so there is nothing to store yet.
+        if (!oData.passwordChangeRequired) {
+          auth.setSession(oData.token, oData.role);
+        }
         return oData;
       });
     },
@@ -91,15 +97,31 @@ sap.ui.define([], function () {
       return post("forgot-password", { email: sEmail });
     },
 
-    resetPassword: function (sToken, sPassword, sConfirmPassword) {
-      return post("reset-password", { token: sToken, password: sPassword, confirmPassword: sConfirmPassword });
+    // token is either the one from an emailed link or a code the user typed;
+    // email is only needed for the code, which on its own does not say who
+    // is resetting.
+    resetPassword: function (oParams) {
+      return post("reset-password", oParams);
+    },
+
+    // Finishes the "choose your own password" step a newly created user
+    // lands on at first login. session comes from that login reply.
+    setInitialPassword: function (oParams) {
+      return post("set-initial-password", oParams).then(function (oData) {
+        auth.setSession(oData.token, oData.role);
+        return oData;
+      });
     },
 
     // The OData model has to carry the token on every request. Called on
     // startup and again after every role switch, since the token changes.
     applyToken: function (oModel) {
       var sToken = auth.getToken();
-      oModel.changeHttpHeaders({ Authorization: sToken ? "Bearer " + sToken : undefined });
+      var sRole = auth.getRole();
+      oModel.changeHttpHeaders({
+        Authorization: sToken ? "Bearer " + sToken : undefined,
+        "X-Active-Role": sRole || undefined
+      });
     }
   };
 

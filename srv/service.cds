@@ -11,7 +11,7 @@ service ITSMService {
     // to resolve a logged-in user's org/theme.
     // passwordHash is excluded here, so it can never leave the server —
     // and an admin can never set one through the generic CRUD either.
-    entity Users              as projection on master.User excluding { passwordHash };
+    entity Users              as projection on master.User excluding { passwordHash, cognitoUserId };
 
     // Which roles a user may log in as. Plain generic CRUD — the Admin
     // panel's role checkboxes just create/delete rows here.

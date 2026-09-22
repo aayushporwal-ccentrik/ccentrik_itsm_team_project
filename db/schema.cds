@@ -128,7 +128,12 @@ context master {
         // above is only the primary one.
         userRoles : Association to many UserRole on userRoles.userId = userId;
 
+        // Set only when AUTH_PROVIDER=cognito - the Cognito user's "sub",
+        // which is what links that identity to this row.
+        cognitoUserId : String(64);
+
         // Never sent to the frontend - stripped in srv/service.js before READ Users.
+        // Used by the local auth provider only; Cognito owns passwords in hybrid.
         passwordHash : String(200);
     }
 
